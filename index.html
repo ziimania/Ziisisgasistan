@@ -1,7 +1,7 @@
 <!doctype html><html lang="tr"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>İSG Takip</title><link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#14532d">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 :root{--bg:#fafaf7;--fg:#1c1917;--mu:#78716c;--ln:#e7e5e0;--ac:#14532d;--on:#fff;--wr:#b45309}
 @media(prefers-color-scheme:dark){:root{--bg:#171a17;--fg:#ecece6;--mu:#a3a39a;--ln:#2a2e2a;--ac:#86d99b;--on:#10210f;--wr:#fbbf24}}
@@ -53,7 +53,7 @@ const tr=(a,b)=>String(a).localeCompare(b,'tr'),pd=t=>doc(db,'users',uid,'calisa
 const wa=t=>{t=String(t).replace(/\D/g,'');return t[0]=='0'?'9'+t:t.length==10?'90'+t:t};
 const dt=v=>v instanceof Date?v.toLocaleDateString('sv'):String(v||'');
 const tcOk=t=>{if(!/^[1-9]\d{10}$/.test(t))return false;const d=[...t].map(Number),a=(d[0]+d[2]+d[4]+d[6]+d[8])*7-(d[1]+d[3]+d[5]+d[7]);return ((a%10)+10)%10==d[9]&&d.slice(0,10).reduce((x,y)=>x+y)%10==d[10]};
-const readX=async f=>{const w=XLSX.read(await f.arrayBuffer(),{cellDates:true});return XLSX.utils.sheet_to_json(w.Sheets[w.SheetNames[0]],{defval:''})};
+const readX=async f=>{if(typeof XLSX=='undefined')throw new Error('Excel kütüphanesi yüklenemedi (ağ engelli olabilir)');const w=XLSX.read(await f.arrayBuffer(),{cellDates:true});return XLSX.utils.sheet_to_json(w.Sheets[w.SheetNames[0]],{defval:''})};
 const col=(r,...k)=>{for(const key of Object.keys(r)){const n=norm(key);if(k.some(x=>n.includes(x)))return r[key]}return ''};
 const commit=async ops=>{try{for(let i=0;i<ops.length;i+=400){const b=writeBatch(db);ops.slice(i,i+400).forEach(f=>f(b));b.commit().catch(e=>alert(e.message))}}catch(e){alert(e.message)}};
 const prev=(h,fn)=>{$('#pv').innerHTML=`<div class="pv">${h}<br><br><button class="p" id="ok">Onayla</button> <button id="no">Vazgeç</button></div>`;
