@@ -1,0 +1,93 @@
+<!doctype html><html lang="tr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>İSG Takip</title><link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#14532d">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{--bg:#fafaf7;--fg:#1c1917;--mu:#78716c;--ln:#e7e5e0;--ac:#14532d;--on:#fff;--wr:#b45309}
+@media(prefers-color-scheme:dark){:root{--bg:#171a17;--fg:#ecece6;--mu:#a3a39a;--ln:#2a2e2a;--ac:#86d99b;--on:#10210f;--wr:#fbbf24}}
+*{box-sizing:border-box}body{margin:0;font:15px/1.4 system-ui,sans-serif;background:var(--bg);color:var(--fg);padding-bottom:70px}
+header{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid var(--ln)}
+main{max-width:800px;margin:auto;padding:8px 16px}small{color:var(--mu)}
+nav{position:fixed;bottom:0;left:0;right:0;display:flex;background:var(--bg);border-top:1px solid var(--ln);padding-bottom:env(safe-area-inset-bottom)}
+nav button{flex:1;padding:14px;border:0;background:none;color:var(--mu);font:inherit}nav .on{color:var(--ac);font-weight:700}
+.row{display:flex;gap:10px;align-items:center;padding:11px 0;border-bottom:1px solid var(--ln)}.row>div{flex:1;min-width:0}
+input,select,button,.b{font:inherit;padding:9px 11px;border:1px solid var(--ln);border-radius:8px;background:var(--bg);color:var(--fg)}
+.p,a.b{background:var(--ac);color:var(--on);border-color:var(--ac);text-decoration:none}input[type=checkbox]{width:20px;height:20px;padding:0}
+.bar{display:flex;flex-wrap:wrap;gap:8px;padding:10px 0}.bar input[type=search]{flex:1;min-width:140px}
+.pv{border-left:3px solid var(--ac);padding:6px 12px;margin:8px 0}.wr{color:var(--wr)}form{display:grid;gap:8px;padding:10px 0}
+</style></head><body>
+<div id="lg" hidden style="padding:60px 16px;text-align:center"><h2>İSG Takip</h2><button class="p" id="gi">Google ile giriş yap</button></div>
+<div id="app" hidden>
+<header><b>İSG Takip</b><small id="u" style="cursor:pointer" title="Çıkış"></small></header>
+<main>
+<div id="pv"></div>
+<section id="t-y"><div class="bar"><button class="p" id="yn">Yerleşke ekle</button></div>
+<form id="yf" hidden><input id="f-ad" placeholder="Yerleşke adı (belediye tablosundaki gibi)" required><input id="f-kisa" placeholder="Raporlarda kullanılacak kısa ad">
+<select id="f-daire"><option></option><option>Veteriner İşleri Dairesi Başkanlığı</option><option>Tarımsal Hizmetler Dairesi Başkanlığı</option></select>
+<input id="f-saha" placeholder="Saha sorumlusu adı"><input id="f-tel" type="tel" placeholder="Saha sorumlusu telefonu"><input id="f-rapor" placeholder="Raporda geçen sorumlu">
+<div class="bar"><button class="p">Kaydet</button><button type="button" id="f-x">Vazgeç</button></div></form>
+<div id="yl"></div></section>
+<section id="t-p" hidden><small id="pc"></small>
+<div class="bar"><label class="b p">İK listesi yükle<input type="file" id="fi" accept=".xlsx,.xls" hidden></label>
+<label class="b p">Yerleşke tablosu yükle<input type="file" id="ft" accept=".xlsx,.xls" hidden></label></div>
+<div class="bar"><input type="search" id="q" placeholder="Ad veya TC ara"><label><input type="checkbox" id="un"> Yalnız atanmamışlar</label></div>
+<div class="bar"><button id="sa">Listedekileri seç</button><span>Seçili: <b id="sc">0</b></span><select id="ay"></select><button class="p" id="ad">Yerleşkeyi değiştir</button><button id="ae">Yerleşke ekle (gezici)</button></div>
+<div id="pl"></div></section></main>
+<nav><button data-t="y" class="on">Yerleşkeler</button><button data-t="p">Personel</button></nav></div>
+<script type="module">
+import {initializeApp} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import {getAuth,GoogleAuthProvider,signInWithPopup,onAuthStateChanged,signOut} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import {initializeFirestore,persistentLocalCache,persistentMultipleTabManager,collection,doc,onSnapshot,setDoc,writeBatch} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import {cfg} from "./config.js";
+const app=initializeApp(cfg),auth=getAuth(app),db=initializeFirestore(app,{localCache:persistentLocalCache({tabManager:persistentMultipleTabManager()})});
+let uid,Y={},P={},shown=[];const sel=new Set(),$=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const norm=s=>String(s??'').trim().toLocaleLowerCase('tr'),slug=s=>norm(s).replace(/[^\p{L}\p{N}]+/gu,'-');
+const tr=(a,b)=>String(a).localeCompare(b,'tr'),pd=t=>doc(db,'users',uid,'calisanlar',t),yd=i=>doc(db,'users',uid,'yerleskeler',i);
+const wa=t=>{t=String(t).replace(/\D/g,'');return t[0]=='0'?'9'+t:t.length==10?'90'+t:t};
+const dt=v=>v instanceof Date?v.toLocaleDateString('sv'):String(v||'');
+const tcOk=t=>{if(!/^[1-9]\d{10}$/.test(t))return false;const d=[...t].map(Number),a=(d[0]+d[2]+d[4]+d[6]+d[8])*7-(d[1]+d[3]+d[5]+d[7]);return ((a%10)+10)%10==d[9]&&d.slice(0,10).reduce((x,y)=>x+y)%10==d[10]};
+const readX=async f=>{const w=XLSX.read(await f.arrayBuffer(),{cellDates:true});return XLSX.utils.sheet_to_json(w.Sheets[w.SheetNames[0]],{defval:''})};
+const col=(r,...k)=>{for(const key of Object.keys(r)){const n=norm(key);if(k.some(x=>n.includes(x)))return r[key]}return ''};
+const commit=async ops=>{try{for(let i=0;i<ops.length;i+=400){const b=writeBatch(db);ops.slice(i,i+400).forEach(f=>f(b));b.commit().catch(e=>alert(e.message))}}catch(e){alert(e.message)}};
+const prev=(h,fn)=>{$('#pv').innerHTML=`<div class="pv">${h}<br><br><button class="p" id="ok">Onayla</button> <button id="no">Vazgeç</button></div>`;
+$('#ok').onclick=()=>{fn();$('#pv').innerHTML='<div class="pv">Kaydedildi. Çevrimdışıysan bağlanınca eşitlenir.</div>'};$('#no').onclick=()=>$('#pv').innerHTML=''};
+const act=()=>Object.values(P).filter(p=>p.durum!='cikis'),ys=p=>p.yerleskeler||[];
+function renderY(){$('#yl').innerHTML=Object.entries(Y).sort((a,b)=>tr(a[1].ad,b[1].ad)).map(([id,y])=>{const n=act().filter(p=>ys(p).includes(id)).length;
+return `<div class="row"><div><b>${esc(y.kisa||y.ad)}</b><br><small>${esc(y.daire||'Daire seçilmemiş')} · ${n} çalışan${y.rapor?' · Raporda: '+esc(y.rapor):''}</small>${y.sahaAd?`<br><small>Saha: ${esc(y.sahaAd)}</small>`:''}</div>${y.tel?`<a class="b" href="tel:${esc(y.tel)}">Ara</a><a class="b" target="_blank" href="https://wa.me/${wa(y.tel)}">WhatsApp</a>`:''}<button data-e="${esc(id)}">Düzenle</button></div>`}).join('')||'<p><small>Yerleşke yok. Personel sekmesinden yerleşke tablosunu yükleyin veya yerleşke ekleyin.</small></p>';
+$('#ay').innerHTML=Object.entries(Y).sort((a,b)=>tr(a[1].ad,b[1].ad)).map(([id,y])=>`<option value="${esc(id)}">${esc(y.kisa||y.ad)}</option>`).join('')}
+function renderP(){const q=norm($('#q').value),u=$('#un').checked;
+shown=Object.values(P).filter(p=>p.durum!='cikis'&&(!u||!ys(p).length)&&(!q||norm(p.ad+' '+p.tc).includes(q))).sort((a,b)=>tr(a.ad,b.ad));
+const a=act();$('#pc').textContent=`Aktif ${a.length} · Yerleşkesi atanmamış ${a.filter(p=>!ys(p).length).length} · İşten çıkmış ${Object.keys(P).length-a.length}`;
+$('#pl').innerHTML=shown.slice(0,300).map(p=>`<label class="row"><input type="checkbox" data-t="${p.tc}" ${sel.has(p.tc)?'checked':''}><div><b>${esc(p.ad)}</b>${p.yeni?' <small class="wr">yeni giriş</small>':''}<br><small>${p.fiiliGorev?'Fiili görev: '+esc(p.fiiliGorev):esc(p.meslek)} · ${esc(ys(p).map(i=>Y[i]?.kisa||Y[i]?.ad||i).join(', ')||'Atanmamış')}</small></div></label>`).join('');$('#sc').textContent=sel.size}
+async function ik(f){const rows=await readX(f),n={};let bad=0;
+for(const r of rows){const tc=String(col(r,'tc')).replace(/\D/g,'');if(!tc)continue;if(!tcOk(tc)){bad++;continue}
+n[tc]={tc,ad:String(col(r,'soyad')).trim(),birim:String(col(r,'birim')).trim(),meslek:String(col(r,'meslek')).trim(),giris:dt(col(r,'başlama')),ayrilis:dt(col(r,'ayrılış'))}}
+const ilk=!Object.keys(P).length,yeni=Object.values(n).filter(x=>!P[x.tc]&&!x.ayrilis),cik=act().filter(p=>!n[p.tc]||n[p.tc].ayrilis);
+const w=act().length&&cik.length>act().length/4?'<p class="wr">Çıkış sayısı yüksek. Liste eksik olabilir, kontrol edin.</p>':'';
+prev(`<b>İK listesi</b><br>${yeni.length} yeni giriş · ${cik.length} işten çıkış · ${Object.keys(n).length-yeni.length} mevcut${bad?` · ${bad} geçersiz TC (atlandı)`:''}${w}`,
+()=>commit([...yeni.map(x=>b=>b.set(pd(x.tc),{...x,durum:'aktif',yeni:!ilk,yerleskeler:[],fiiliGorev:''})),...cik.map(p=>b=>b.update(pd(p.tc),{durum:'cikis'}))]))}
+async function yt(f){const rows=await readX(f),m={};
+for(const r of rows){const tc=String(col(r,'tc','t.c')).replace(/\D/g,''),y=String(col(r,'yerleşke')).trim();if(!tc||!y)continue;const o=m[tc]??={ys:new Set(),g:''};o.ys.add(y);o.g=String(col(r,'görev','ünvan')).trim()||o.g}
+const hit=Object.keys(m).filter(t=>P[t]),nyr=new Map();
+Object.values(m).forEach(o=>o.ys.forEach(y=>{if(!Y[slug(y)])nyr.set(slug(y),y)}));
+const chg=hit.filter(t=>ys(P[t]).length&&[...m[t].ys].map(slug).sort().join()!=[...ys(P[t])].sort().join()).length;
+prev(`<b>Yerleşke tablosu</b><br>${hit.length} kişi eşleşti · ${Object.keys(m).length-hit.length} TC listede yok · ${nyr.size} yeni yerleşke${chg?` · <span class="wr">${chg} kişinin mevcut ataması değişecek</span>`:''}`,
+()=>commit([...[...nyr].map(([id,ad])=>b=>b.set(yd(id),{ad,kisa:ad,daire:'',sahaAd:'',tel:'',rapor:''})),...hit.map(t=>b=>b.update(pd(t),{yerleskeler:[...m[t].ys].map(slug),fiiliGorev:m[t].g}))]))}
+const atama=mode=>{const y=$('#ay').value;if(!y||!sel.size)return;commit([...sel].map(tc=>b=>b.update(pd(tc),{yerleskeler:mode=='ekle'?[...new Set([...ys(P[tc]),y])]:[y]})));sel.clear();renderP()};
+$('#fi').onchange=e=>ik(e.target.files[0]).catch(x=>alert('Dosya okunamadı: '+x.message)).finally(()=>e.target.value='');
+$('#ft').onchange=e=>yt(e.target.files[0]).catch(x=>alert('Dosya okunamadı: '+x.message)).finally(()=>e.target.value='');
+$('#q').oninput=$('#un').onchange=renderP;$('#ad').onclick=()=>atama('degis');$('#ae').onclick=()=>atama('ekle');
+$('#sa').onclick=()=>{shown.forEach(p=>sel.add(p.tc));renderP()};
+$('#pl').onchange=e=>{const t=e.target.dataset.t;if(t){e.target.checked?sel.add(t):sel.delete(t);$('#sc').textContent=sel.size}};
+let eid='';const fm=(id,y={})=>{eid=id;$('#yf').hidden=false;$('#f-ad').value=y.ad||'';$('#f-kisa').value=y.kisa||'';$('#f-daire').value=y.daire||'';$('#f-saha').value=y.sahaAd||'';$('#f-tel').value=y.tel||'';$('#f-rapor').value=y.rapor||''};
+$('#yn').onclick=()=>fm('');$('#f-x').onclick=()=>$('#yf').hidden=true;
+$('#yl').onclick=e=>{const i=e.target.dataset.e;if(i)fm(i,Y[i])};
+$('#yf').onsubmit=e=>{e.preventDefault();const ad=$('#f-ad').value.trim();setDoc(yd(eid||slug(ad)),{ad,kisa:$('#f-kisa').value.trim()||ad,daire:$('#f-daire').value,sahaAd:$('#f-saha').value.trim(),tel:$('#f-tel').value.trim(),rapor:$('#f-rapor').value.trim()},{merge:true}).catch(x=>alert(x.message));$('#yf').hidden=true};
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('on',x==b));$('#t-y').hidden=b.dataset.t!='y';$('#t-p').hidden=b.dataset.t!='p'});
+$('#gi').onclick=()=>signInWithPopup(auth,new GoogleAuthProvider()).catch(e=>alert(e.message));$('#u').onclick=()=>signOut(auth);
+onAuthStateChanged(auth,u=>{$('#lg').hidden=!!u;$('#app').hidden=!u;if(!u)return;uid=u.uid;$('#u').textContent=u.email+' (çıkış)';
+onSnapshot(collection(db,'users',uid,'yerleskeler'),s=>{Y={};s.forEach(d=>Y[d.id]=d.data());renderY();renderP()});
+onSnapshot(collection(db,'users',uid,'calisanlar'),s=>{P={};s.forEach(d=>P[d.id]=d.data());renderP();renderY()})});
+navigator.serviceWorker?.register('sw.js');
+</script></body></html>
