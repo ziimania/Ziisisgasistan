@@ -31,7 +31,8 @@ input,select,button,.b{font:inherit;padding:9px 11px;border:1px solid var(--ln);
 <section id="t-p" hidden><small id="pc"></small>
 <div class="bar"><label class="b p">İK listesi yükle<input type="file" id="fi" accept=".xlsx,.xls" hidden></label>
 <label class="b p">Yerleşke tablosu yükle<input type="file" id="ft" accept=".xlsx,.xls" hidden></label></div>
-<div class="bar"><input type="search" id="q" placeholder="Ad veya TC ara"><label><input type="checkbox" id="un"> Yalnız atanmamışlar</label></div>
+<div class="bar"><button id="s1">İK listesi taslağını indir</button><button id="s2">Yerleşke tablosu taslağını indir</button></div>
+<div class="bar"><input type="search" id="q" placeholder="Ad veya TC ara"><label><input type="checkbox" id="un"> Yalnız yerleşkesi bilinmeyenler</label></div>
 <div class="bar"><button id="sa">Listedekileri seç</button><span>Seçili: <b id="sc">0</b></span><select id="ay"></select><button class="p" id="ad">Yerleşkeyi değiştir</button><button id="ae">Yerleşke ekle (gezici)</button></div>
 <div id="pl"></div></section></main>
 <nav><button data-t="y" class="on">Yerleşkeler</button><button data-t="p">Personel</button></nav></div>
@@ -61,11 +62,11 @@ $('#ok').onclick=()=>{fn();$('#pv').innerHTML='<div class="pv">Kaydedildi. Çevr
 const act=()=>Object.values(P).filter(p=>p.durum!='cikis'),ys=p=>p.yerleskeler||[];
 function renderY(){$('#yl').innerHTML=Object.entries(Y).sort((a,b)=>tr(a[1].ad,b[1].ad)).map(([id,y])=>{const n=act().filter(p=>ys(p).includes(id)).length;
 return `<div class="row"><div><b>${esc(y.kisa||y.ad)}</b><br><small>${esc(y.daire||'Daire seçilmemiş')} · ${n} çalışan${y.rapor?' · Raporda: '+esc(y.rapor):''}</small>${y.sahaAd?`<br><small>Saha: ${esc(y.sahaAd)}</small>`:''}</div>${y.tel?`<a class="b" href="tel:${esc(y.tel)}">Ara</a><a class="b" target="_blank" href="https://wa.me/${wa(y.tel)}">WhatsApp</a>`:''}<button data-e="${esc(id)}">Düzenle</button></div>`}).join('')||'<p><small>Yerleşke yok. Personel sekmesinden yerleşke tablosunu yükleyin veya yerleşke ekleyin.</small></p>';
-$('#ay').innerHTML=Object.entries(Y).sort((a,b)=>tr(a[1].ad,b[1].ad)).map(([id,y])=>`<option value="${esc(id)}">${esc(y.kisa||y.ad)}</option>`).join('')}
+$('#ay').innerHTML='<option value="">Yerleşke seç…</option><option value="__b">Bilinmiyor (atamayı kaldır)</option>'+Object.entries(Y).sort((a,b)=>tr(a[1].ad,b[1].ad)).map(([id,y])=>`<option value="${esc(id)}">${esc(y.kisa||y.ad)}</option>`).join('')}
 function renderP(){const q=norm($('#q').value),u=$('#un').checked;
 shown=Object.values(P).filter(p=>p.durum!='cikis'&&(!u||!ys(p).length)&&(!q||norm(p.ad+' '+p.tc).includes(q))).sort((a,b)=>tr(a.ad,b.ad));
-const a=act();$('#pc').textContent=`Aktif ${a.length} · Yerleşkesi atanmamış ${a.filter(p=>!ys(p).length).length} · İşten çıkmış ${Object.keys(P).length-a.length}`;
-$('#pl').innerHTML=shown.slice(0,300).map(p=>`<label class="row"><input type="checkbox" data-t="${p.tc}" ${sel.has(p.tc)?'checked':''}><div><b>${esc(p.ad)}</b>${p.yeni?' <small class="wr">yeni giriş</small>':''}<br><small>${p.fiiliGorev?'Fiili görev: '+esc(p.fiiliGorev):esc(p.meslek)} · ${esc(ys(p).map(i=>Y[i]?.kisa||Y[i]?.ad||i).join(', ')||'Atanmamış')}</small></div></label>`).join('');$('#sc').textContent=sel.size}
+const a=act();$('#pc').textContent=`Aktif ${a.length} · Yerleşkesi bilinmeyen ${a.filter(p=>!ys(p).length).length} · İşten çıkmış ${Object.keys(P).length-a.length}`;
+$('#pl').innerHTML=shown.slice(0,300).map(p=>`<label class="row"><input type="checkbox" data-t="${p.tc}" ${sel.has(p.tc)?'checked':''}><div><b>${esc(p.ad)}</b>${p.yeni?' <small class="wr">yeni giriş</small>':''}<br><small>${p.fiiliGorev?'Fiili görev: '+esc(p.fiiliGorev):esc(p.meslek)} · ${esc(ys(p).map(i=>Y[i]?.kisa||Y[i]?.ad||i).join(', ')||'Bilinmiyor')}</small></div></label>`).join('');$('#sc').textContent=sel.size}
 async function ik(f){const rows=await readX(f),n={};let bad=0;
 for(const r of rows){const tc=String(col(r,'tc')).replace(/\D/g,'');if(!tc)continue;if(!tcOk(tc)){bad++;continue}
 n[tc]={tc,ad:String(col(r,'soyad')).trim(),birim:String(col(r,'birim')).trim(),meslek:String(col(r,'meslek')).trim(),giris:dt(col(r,'başlama')),ayrilis:dt(col(r,'ayrılış'))}}
@@ -74,13 +75,16 @@ const w=act().length&&cik.length>act().length/4?'<p class="wr">Çıkış sayıs�
 prev(`<b>İK listesi</b><br>${yeni.length} yeni giriş · ${cik.length} işten çıkış · ${Object.keys(n).length-yeni.length} mevcut${bad?` · ${bad} geçersiz TC (atlandı)`:''}${w}`,
 ()=>commit([...yeni.map(x=>b=>b.set(pd(x.tc),{...x,durum:'aktif',yeni:!ilk,yerleskeler:[],fiiliGorev:''})),...cik.map(p=>b=>b.update(pd(p.tc),{durum:'cikis'}))]))}
 async function yt(f){const rows=await readX(f),m={};
-for(const r of rows){const tc=String(col(r,'tc','t.c')).replace(/\D/g,''),y=String(col(r,'yerleşke')).trim();if(!tc||!y)continue;const o=m[tc]??={ys:new Set(),g:''};o.ys.add(y);o.g=String(col(r,'görev','ünvan')).trim()||o.g}
+for(const r of rows){const tc=String(col(r,'tc','t.c')).replace(/\D/g,''),y=String(col(r,'yerleşke')).trim();if(!tc||!y)continue;const o=m[tc]??={ys:new Set(),g:''};if(norm(y)!='bilinmiyor')o.ys.add(y);o.g=String(col(r,'görev','ünvan')).trim()||o.g}
 const hit=Object.keys(m).filter(t=>P[t]),nyr=new Map();
 Object.values(m).forEach(o=>o.ys.forEach(y=>{if(!Y[slug(y)])nyr.set(slug(y),y)}));
 const chg=hit.filter(t=>ys(P[t]).length&&[...m[t].ys].map(slug).sort().join()!=[...ys(P[t])].sort().join()).length;
 prev(`<b>Yerleşke tablosu</b><br>${hit.length} kişi eşleşti · ${Object.keys(m).length-hit.length} TC listede yok · ${nyr.size} yeni yerleşke${chg?` · <span class="wr">${chg} kişinin mevcut ataması değişecek</span>`:''}`,
 ()=>commit([...[...nyr].map(([id,ad])=>b=>b.set(yd(id),{ad,kisa:ad,daire:'',sahaAd:'',tel:'',rapor:''})),...hit.map(t=>b=>b.update(pd(t),{yerleskeler:[...m[t].ys].map(slug),fiiliGorev:m[t].g}))]))}
-const atama=mode=>{const y=$('#ay').value;if(!y||!sel.size)return;commit([...sel].map(tc=>b=>b.update(pd(tc),{yerleskeler:mode=='ekle'?[...new Set([...ys(P[tc]),y])]:[y]})));sel.clear();renderP()};
+const atama=mode=>{const y=$('#ay').value;if(!y||!sel.size)return;const bl=y=='__b',ad=bl?'Bilinmiyor':(Y[y]?.kisa||Y[y]?.ad);if(!confirm(`${sel.size} kişi için işlem: ${ad}. Devam edilsin mi?`))return;commit([...sel].map(tc=>b=>b.update(pd(tc),{yerleskeler:bl?[]:mode=='ekle'?[...new Set([...ys(P[tc]),y])]:[y]})));sel.clear();renderP()};
+const sablon=(ad,hd,not)=>{if(typeof XLSX=='undefined')return alert('Excel kütüphanesi yüklenemedi (ağ engelli olabilir)');const w=XLSX.utils.book_new();XLSX.utils.book_append_sheet(w,XLSX.utils.aoa_to_sheet([hd]),'Veri');XLSX.utils.book_append_sheet(w,XLSX.utils.aoa_to_sheet(not.map(x=>[x])),'Açıklama');XLSX.writeFile(w,ad+'.xlsx')};
+$('#s1').onclick=()=>sablon('IK_listesi_taslak',['TC Kimlik No','Adı Soyadı','Birim','Meslek Adı-Kodu','İşe Başlama Tarihi','İşten Ayrılış Tarihi'],['Veri sayfasını doldurup yükleyin. İK sisteminden aldığınız 20 sütunluk liste de olduğu gibi yüklenebilir.','TC 11 haneli olmalı, geçersiz TC satırları atlanır.','Listede olmayan aktif çalışanlar işten çıkış olarak önerilir (önizlemede görürsünüz).','İşten Ayrılış Tarihi doluysa çalışan işten çıkmış sayılır.']);
+$('#s2').onclick=()=>sablon('Yerleske_tablosu_taslak',['T.C.','Ad Soyad','Görevi','Bağlı Olduğu Yerleşke'],['Aynı TC için birden fazla satır yazarsanız çalışan gezici sayılır.','Yerleşke bilinmiyorsa Bilinmiyor yazın (atama kaldırılır). Hücre boşsa satır atlanır.','Görevi sütunu çalışan kartında Fiili görev olarak görünür.','Yerleşke adı yeni ise yüklemede kendiliğinden oluşturulur.']);
 $('#fi').onchange=e=>ik(e.target.files[0]).catch(x=>alert('Dosya okunamadı: '+x.message)).finally(()=>e.target.value='');
 $('#ft').onchange=e=>yt(e.target.files[0]).catch(x=>alert('Dosya okunamadı: '+x.message)).finally(()=>e.target.value='');
 $('#q').oninput=$('#un').onchange=renderP;$('#ad').onclick=()=>atama('degis');$('#ae').onclick=()=>atama('ekle');
