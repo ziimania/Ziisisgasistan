@@ -27,8 +27,12 @@ h2{font-size:1.15rem}.chip{display:flex;justify-content:space-between;align-item
 <main>
 <div id="pv"></div>
 <section id="t-b"><h2 id="bd" style="margin:8px 0"></h2><div id="bp"></div><div class="sg" id="bs"></div>
-<form id="if" class="bar"><input id="ib" placeholder="Yeni iş ekle" style="flex:1;min-width:160px"><select id="iy"></select><input type="date" id="idt"><button class="p">Ekle</button></form><div id="bl"></div></section>
+<form id="if" class="bar"><input id="ib" placeholder="Yeni iş ekle" style="flex:1;min-width:160px"><select id="iy"></select><input type="date" id="idt"><button class="p">Ekle</button></form><div id="bl"></div><h2 style="margin-top:24px">Evrak ve imza takibi</h2><div id="be"></div></section>
 <section id="t-h" hidden><div class="bar"><button id="wp">◀</button><b id="wt"></b><button id="wn">▶</button><button id="wc">Geçen haftayı kopyala</button></div><div class="wk" id="wg"></div></section>
+<section id="t-e" hidden><details><summary class="b p" style="display:inline-block;cursor:pointer">Evrak ekle</summary>
+<form id="ef"><select id="et"><option value="kaza">Kaza tutanağı</option><option value="egitim">Eğitim katılım formu</option><option value="diger">Diğer evrak</option></select>
+<input id="eb" placeholder="Konu (isteğe bağlı)"><select id="ey"></select><input id="ec" list="cl" placeholder="İlgili çalışan (isteğe bağlı)"><datalist id="cl"></datalist><input type="date" id="ed" title="Olay tarihi"><input id="ei" placeholder="İmzacılar (virgülle ayırın)"><button class="p">Kaydet</button></form></details>
+<div class="bar"><label><input type="checkbox" id="eh"> Tamamlananları da göster</label></div><div id="el"></div></section>
 <section id="t-y" hidden><div class="bar"><button class="p" id="yn">Yerleşke ekle</button></div>
 <form id="yf" hidden><input id="f-ad" placeholder="Yerleşke adı (belediye tablosundaki gibi)" required><input id="f-kisa" placeholder="Raporlarda kullanılacak kısa ad">
 <select id="f-daire"><option></option><option>Veteriner İşleri Dairesi Başkanlığı</option><option>Tarımsal Hizmetler Dairesi Başkanlığı</option></select>
@@ -42,7 +46,7 @@ h2{font-size:1.15rem}.chip{display:flex;justify-content:space-between;align-item
 <div class="bar"><input type="search" id="q" placeholder="Ad veya TC ara"><label><input type="checkbox" id="un"> Yalnız yerleşkesi bilinmeyenler</label></div>
 <div class="bar"><button id="sa">Listedekileri seç</button><span>Seçili: <b id="sc">0</b></span><select id="ay"></select><button class="p" id="ad">Yerleşkeyi değiştir</button><button id="ae">Yerleşke ekle (gezici)</button></div>
 <div id="pl"></div></section></main>
-<nav><button data-t="b" class="on">Bugün</button><button data-t="h">Hafta</button><button data-t="y">Yerleşkeler</button><button data-t="p">Personel</button></nav></div>
+<nav><button data-t="b" class="on">Bugün</button><button data-t="h">Hafta</button><button data-t="e">Evrak</button><button data-t="y">Yerleşkeler</button><button data-t="p">Personel</button></nav></div>
 <script>
 function hata(m){var d=document.getElementById('ld');d.hidden=false;d.innerHTML='<b>Uygulama başlatılamadı.</b><br>'+m+'<br><small>Ayrıntı için F12 &gt; Console sekmesine bakın.</small>'}
 addEventListener('error',function(e){hata(e.message)});addEventListener('unhandledrejection',function(e){hata(String(e.reason&&e.reason.message||e.reason))});
@@ -51,10 +55,10 @@ setTimeout(function(){if(document.getElementById('lg').hidden&&document.getEleme
 <script type="module">
 import {initializeApp} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import {getAuth,GoogleAuthProvider,signInWithPopup,onAuthStateChanged,signOut} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import {initializeFirestore,persistentLocalCache,persistentMultipleTabManager,collection,doc,onSnapshot,setDoc,writeBatch} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import {initializeFirestore,persistentLocalCache,persistentMultipleTabManager,collection,doc,onSnapshot,setDoc,deleteDoc,writeBatch} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import {cfg} from "./config.js";
 const app=initializeApp(cfg),auth=getAuth(app),db=initializeFirestore(app,{localCache:persistentLocalCache({tabManager:persistentMultipleTabManager()})});
-let uid,Y={},P={},PR={},IS={},shown=[];const sel=new Set(),$=s=>document.querySelector(s);
+let uid,Y={},P={},PR={},IS={},EV={},shown=[];const sel=new Set(),$=s=>document.querySelector(s);
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const norm=s=>String(s??'').trim().toLocaleLowerCase('tr'),slug=s=>norm(s).replace(/[^\p{L}\p{N}]+/gu,'-');
 const tr=(a,b)=>String(a).localeCompare(b,'tr'),pd=t=>doc(db,'users',uid,'calisanlar',t),yd=i=>doc(db,'users',uid,'yerleskeler',i);
@@ -104,10 +108,11 @@ $('#yf').onsubmit=e=>{e.preventDefault();const ad=$('#f-ad').value.trim();setDoc
 document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('on',x==b));document.querySelectorAll('main section').forEach(s=>s.hidden=s.id!='t-'+b.dataset.t)});
 $('#gi').onclick=()=>signInWithPopup(auth,new GoogleAuthProvider()).catch(e=>alert(e.message));$('#u').onclick=()=>signOut(auth);
 onAuthStateChanged(auth,u=>{$('#ld').hidden=true;$('#lg').hidden=!!u;$('#app').hidden=!u;if(!u)return;uid=u.uid;$('#u').textContent=u.email+' (çıkış)';
-onSnapshot(collection(db,'users',uid,'yerleskeler'),s=>{Y={};s.forEach(d=>Y[d.id]=d.data());renderY();renderP();renderH();renderB();fillIy()});
-onSnapshot(collection(db,'users',uid,'calisanlar'),s=>{P={};s.forEach(d=>P[d.id]=d.data());renderP();renderY();renderB()});
+onSnapshot(collection(db,'users',uid,'yerleskeler'),s=>{Y={};s.forEach(d=>Y[d.id]=d.data());renderY();renderP();renderH();renderB();fillIy();fillE()});
+onSnapshot(collection(db,'users',uid,'calisanlar'),s=>{P={};s.forEach(d=>P[d.id]=d.data());renderP();renderY();renderB();fillE()});
 onSnapshot(collection(db,'users',uid,'program'),s=>{PR={};s.forEach(d=>PR[d.id]=d.data().items||[]);renderH();renderB()});
-onSnapshot(collection(db,'users',uid,'isler'),s=>{IS={};s.forEach(d=>IS[d.id]=d.data());renderB()})});
+onSnapshot(collection(db,'users',uid,'isler'),s=>{IS={};s.forEach(d=>IS[d.id]=d.data());renderB()});
+onSnapshot(collection(db,'users',uid,'evraklar'),s=>{EV={};s.forEach(d=>EV[d.id]=d.data());renderB();renderE()})});
 const iso=d=>d.toLocaleDateString('sv'),addD=(s,n)=>{const d=new Date(s+'T12:00');d.setDate(d.getDate()+n);return iso(d)},mon=s=>{const d=new Date(s+'T12:00');d.setDate(d.getDate()-((d.getDay()+6)%7));return iso(d)};
 const GN=['Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi','Pazar'],fd=s=>s.slice(8)+'.'+s.slice(5,7),lab=i=>i=='__o'?'Ofis / Dökümantasyon':i=='__i'?'İzin / Diğer':(Y[i]?.kisa||Y[i]?.ad||i);
 const yopt=()=>Object.entries(Y).sort((a,b)=>tr(a[1].ad,b[1].ad)).map(([id,y])=>`<option value="${esc(id)}">${esc(y.kisa||y.ad)}</option>`).join('');
@@ -119,12 +124,27 @@ $('#wg').onclick=e=>{const d=e.target.dataset.d;if(d)sd(d,(PR[d]||[]).filter((_,
 $('#wg').onchange=e=>{const d=e.target.dataset.a;if(d&&e.target.value)sd(d,[...(PR[d]||[]),e.target.value])};
 $('#wp').onclick=()=>{wk=addD(wk,-7);renderH()};$('#wn').onclick=()=>{wk=addD(wk,7);renderH()};
 $('#wc').onclick=()=>{if(!confirm('Geçen haftanın programı bu haftaya kopyalansın mı? Bu haftadaki günlerin üzerine yazılır.'))return;for(let i=0;i<5;i++){const s=PR[addD(wk,i-7)];if(s)sd(addD(wk,i),[...s])}};
-function renderB(){const t=iso(new Date()),it=PR[t]||[],ac=Object.entries(IS).filter(([,x])=>!x.bitti),od=ac.filter(([,x])=>x.tarih<t).length,due=ac.filter(([,x])=>x.tarih<=t),bn=act().filter(p=>!ys(p).length).length;
+function renderB(){const eo=Object.entries(EV).filter(([,x])=>x.durum!='tamam').sort((a,b)=>gun(b[1])-gun(a[1])),t=iso(new Date()),it=PR[t]||[],ac=Object.entries(IS).filter(([,x])=>!x.bitti),od=ac.filter(([,x])=>x.tarih<t).length,due=ac.filter(([,x])=>x.tarih<=t),bn=act().filter(p=>!ys(p).length).length;
 $('#bd').textContent=`${GN[(new Date().getDay()+6)%7]}, ${fd(t)}.${t.slice(0,4)}`;
 $('#bp').innerHTML=it.length?it.map(x=>`<span class="chip">${esc(lab(x))}</span>`).join(''):'<small>Bugün için program yok. Hafta sekmesinden ekleyin.</small>';
-$('#bs').innerHTML=`<div class="sy${od?' wr':''}"><b>${od}</b><small>geciken iş</small></div><div class="sy"><b>${due.length}</b><small>yapılacak iş</small></div><div class="sy${bn?' wr':''}"><b>${bn}</b><small>yerleşkesi bilinmeyen çalışan</small></div>`;
-const pr=x=>it.includes(x.yer)?0:1;$('#bl').innerHTML=due.sort((a,b)=>pr(a[1])-pr(b[1])||a[1].tarih.localeCompare(b[1].tarih)).map(([id,x])=>`<label class="row"><input type="checkbox" data-i="${id}"><div>${esc(x.baslik)}<br><small class="${x.tarih<t?'wr':''}">${x.yer?esc(lab(x.yer))+' · ':''}${x.tarih<t?'Gecikti, '+fd(x.tarih):'Bugün'}</small></div></label>`).join('')||'<p><small>Bekleyen iş yok.</small></p>'}
+$('#bs').innerHTML=`<div class="sy${od?' wr':''}"><b>${od}</b><small>geciken iş</small></div><div class="sy"><b>${due.length}</b><small>yapılacak iş</small></div><div class="sy${bn?' wr':''}"><b>${bn}</b><small>yerleşkesi bilinmeyen çalışan</small></div><div class="sy${eo.length?' wr':''}"><b>${eo.length}</b><small>açık evrak</small></div>`;
+const pr=x=>it.includes(x.yer)?0:1;$('#bl').innerHTML=due.sort((a,b)=>pr(a[1])-pr(b[1])||a[1].tarih.localeCompare(b[1].tarih)).map(([id,x])=>`<label class="row"><input type="checkbox" data-i="${id}"><div>${esc(x.baslik)}<br><small class="${x.tarih<t?'wr':''}">${x.yer?esc(lab(x.yer))+' · ':''}${x.tarih<t?'Gecikti, '+fd(x.tarih):'Bugün'}</small></div></label>`).join('')||'<p><small>Bekleyen iş yok.</small></p>';
+$('#be').innerHTML=eo.map(([id,x])=>`<div class="row"><div>${esc(x.baslik)}<br><small class="${['imzada','tarama'].includes(x.durum)?'wr':''}">${DL[DN.indexOf(x.durum)]} · ${gun(x)} gündür açık${(x.imza||[]).some(m=>!m.ok)?' · Eksik imza: '+(x.imza||[]).filter(m=>!m.ok).map(m=>esc(m.ad)).join(', '):''}</small></div></div>`).join('')||'<p><small>Açık evrak yok.</small></p>'}
 $('#if').onsubmit=e=>{e.preventDefault();const b=$('#ib').value.trim();if(!b)return;setDoc(doc(db,'users',uid,'isler','i'+Date.now()),{baslik:b,yer:$('#iy').value,tarih:$('#idt').value||iso(new Date()),bitti:false}).catch(x=>alert(x.message));$('#ib').value=''};
 $('#bl').onchange=e=>{const i=e.target.dataset.i;if(i)setDoc(doc(db,'users',uid,'isler',i),{bitti:true},{merge:true}).catch(x=>alert(x.message))};
+const TUR={kaza:['Kaza tutanağı','Kazalı çalışan, Birim amiri, Tanık'],egitim:['Eğitim katılım formu','Eğitimi veren, Katılımcılar'],diger:['Diğer evrak','']};
+const DN=['planli','hazir','imzada','tarama','tamam'],DL=['Planlandı','Hazırlandı','İmzada','İmzalı nüsha bekleniyor','Tamam'],DA=['Hazırlandı','İmzaya gönderildi','İmzalı nüsha geldi','Taranıp işlendi'];
+const gun=x=>Math.max(0,Math.floor((Date.now()-new Date(x.gonderim||x.olusturma))/864e5)),ud=(id,o)=>setDoc(doc(db,'users',uid,'evraklar',id),o,{merge:true}).catch(e=>alert(e.message));
+function fillE(){const v=$('#ey').value;$('#ey').innerHTML='<option value="">Yerleşke (isteğe bağlı)</option>'+yopt();$('#ey').value=v;$('#cl').innerHTML=act().map(p=>`<option value="${esc(p.ad)}">`).join('')}
+function renderE(){const all=$('#eh').checked;$('#el').innerHTML=Object.entries(EV).filter(([,x])=>all||x.durum!='tamam').sort((a,b)=>(a[1].durum=='tamam')-(b[1].durum=='tamam')||gun(b[1])-gun(a[1])).map(([id,x])=>{const k=DN.indexOf(x.durum);
+return `<div class="row" style="align-items:flex-start"><div><b>${esc(x.baslik)}</b><br><small>${DL[k]} · ${x.yer?esc(lab(x.yer))+' · ':''}${x.tarih?fd(x.tarih)+'.'+x.tarih.slice(0,4)+' · ':''}${k<4?gun(x)+' gündür açık':''}</small><div>${(x.imza||[]).map((m,j)=>`<label style="margin-right:12px"><input type="checkbox" data-e="${id}" data-j="${j}" ${m.ok?'checked':''}> ${esc(m.ad)}</label>`).join('')}</div></div>
+<div style="display:flex;flex-direction:column;gap:6px">${k<4?`<button class="p" data-n="${id}">${DA[k]}</button>`:''}${k>0?`<button data-p="${id}">Geri al</button>`:''}<button data-x="${id}">Sil</button></div></div>`}).join('')||'<p><small>Evrak yok. Evrak ekle düğmesiyle başlayın.</small></p>'}
+$('#eh').onchange=renderE;
+$('#et').onchange=()=>$('#ei').value=TUR[$('#et').value][1];$('#et').onchange();
+$('#ef').onsubmit=e=>{e.preventDefault();const t=$('#et').value,c=$('#ec').value.trim(),b=$('#eb').value.trim();
+setDoc(doc(db,'users',uid,'evraklar','e'+Date.now()),{tur:t,baslik:TUR[t][0]+(c?' – '+c:'')+(b?' – '+b:''),yer:$('#ey').value,tarih:$('#ed').value,calisan:c,imza:$('#ei').value.split(',').map(s=>s.trim()).filter(Boolean).map(ad=>({ad,ok:false})),durum:'planli',olusturma:new Date().toISOString(),gonderim:''}).catch(x=>alert(x.message));$('#eb').value=$('#ec').value=''};
+$('#el').onclick=e=>{const d=e.target.dataset;if(d.n){const k=DN.indexOf(EV[d.n].durum)+1;ud(d.n,{durum:DN[k],...(DN[k]=='imzada'?{gonderim:new Date().toISOString()}:{})})}
+if(d.p)ud(d.p,{durum:DN[DN.indexOf(EV[d.p].durum)-1]});if(d.x&&confirm('Evrak silinsin mi?'))deleteDoc(doc(db,'users',uid,'evraklar',d.x)).catch(x=>alert(x.message))};
+$('#el').onchange=e=>{const d=e.target.dataset;if(d.e)ud(d.e,{imza:EV[d.e].imza.map((m,j)=>j==d.j?{...m,ok:e.target.checked}:m)})};
 navigator.serviceWorker?.register('sw.js');
 </script></body></html>
