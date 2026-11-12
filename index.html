@@ -1,6 +1,6 @@
 <!doctype html><html lang="tr"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>İSG Takip</title><link rel="icon" href="favicon.png"><link rel="apple-touch-icon" href="favicon.png">{"name":"İSG Takip","short_name":"İSG Takip","start_url":"./","display":"standalone","background_color":"#fafaf7","theme_color":"#14532d","icons":[{"src":"favicon.png","sizes":"512x512","type":"image/png"}]}
+<title>İSG Takip</title><link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#14532d">
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 :root{--bg:#fafaf7;--fg:#1c1917;--mu:#78716c;--ln:#e7e5e0;--ac:#14532d;--on:#fff;--wr:#b45309}
@@ -15,6 +15,10 @@ input,select,button,.b{font:inherit;padding:9px 11px;border:1px solid var(--ln);
 .p,a.b{background:var(--ac);color:var(--on);border-color:var(--ac);text-decoration:none}input[type=checkbox]{width:20px;height:20px;padding:0}
 .bar{display:flex;flex-wrap:wrap;gap:8px;padding:10px 0}.bar input[type=search]{flex:1;min-width:140px}
 .pv{border-left:3px solid var(--ac);padding:6px 12px;margin:8px 0}.wr{color:var(--wr)}form{display:grid;gap:8px;padding:10px 0}
+h2{font-size:1.15rem}.chip{display:flex;justify-content:space-between;align-items:center;gap:6px;padding:7px 10px;margin:6px 0;border:1px solid var(--ln);border-radius:8px}.chip button{border:0;padding:0 4px;background:none}
+#bp{display:flex;flex-wrap:wrap;gap:6px}#bp .chip{margin:0}.sg{display:flex;gap:10px;margin:14px 0}.sy{flex:1;padding:10px 12px;border-left:3px solid var(--ln)}.sy b{display:block;font-size:1.6rem}.sy.wr{border-color:var(--wr)}
+.wk{display:grid;gap:10px}.day{padding:8px 10px;border:1px solid var(--ln);border-radius:10px}.day.td{border-color:var(--ac)}.day select{width:100%;margin-top:4px}
+@media(min-width:900px){body{padding:0 0 0 200px}nav{top:0;bottom:auto;right:auto;width:200px;height:100%;flex-direction:column;justify-content:flex-start;border-top:0;border-right:1px solid var(--ln);padding-top:12px}nav button{text-align:left;padding:14px 22px}main{max-width:1040px;padding:16px 32px}.wk{grid-template-columns:repeat(5,1fr)}#yf{grid-template-columns:1fr 1fr}#yf .bar{grid-column:1/3}#yl,#pl{display:grid;grid-template-columns:1fr 1fr;column-gap:32px;align-items:start}}
 </style></head><body>
 <div id="ld" style="padding:40px 16px">Yükleniyor…</div>
 <div id="lg" hidden style="padding:60px 16px;text-align:center"><h2>İSG Takip</h2><button class="p" id="gi">Google ile giriş yap</button></div>
@@ -22,7 +26,10 @@ input,select,button,.b{font:inherit;padding:9px 11px;border:1px solid var(--ln);
 <header><b>İSG Takip</b><small id="u" style="cursor:pointer" title="Çıkış"></small></header>
 <main>
 <div id="pv"></div>
-<section id="t-y"><div class="bar"><button class="p" id="yn">Yerleşke ekle</button></div>
+<section id="t-b"><h2 id="bd" style="margin:8px 0"></h2><div id="bp"></div><div class="sg" id="bs"></div>
+<form id="if" class="bar"><input id="ib" placeholder="Yeni iş ekle" style="flex:1;min-width:160px"><select id="iy"></select><input type="date" id="idt"><button class="p">Ekle</button></form><div id="bl"></div></section>
+<section id="t-h" hidden><div class="bar"><button id="wp">◀</button><b id="wt"></b><button id="wn">▶</button><button id="wc">Geçen haftayı kopyala</button></div><div class="wk" id="wg"></div></section>
+<section id="t-y" hidden><div class="bar"><button class="p" id="yn">Yerleşke ekle</button></div>
 <form id="yf" hidden><input id="f-ad" placeholder="Yerleşke adı (belediye tablosundaki gibi)" required><input id="f-kisa" placeholder="Raporlarda kullanılacak kısa ad">
 <select id="f-daire"><option></option><option>Veteriner İşleri Dairesi Başkanlığı</option><option>Tarımsal Hizmetler Dairesi Başkanlığı</option></select>
 <input id="f-saha" placeholder="Saha sorumlusu adı"><input id="f-tel" type="tel" placeholder="Saha sorumlusu telefonu"><input id="f-rapor" placeholder="Raporda geçen sorumlu">
@@ -35,7 +42,7 @@ input,select,button,.b{font:inherit;padding:9px 11px;border:1px solid var(--ln);
 <div class="bar"><input type="search" id="q" placeholder="Ad veya TC ara"><label><input type="checkbox" id="un"> Yalnız yerleşkesi bilinmeyenler</label></div>
 <div class="bar"><button id="sa">Listedekileri seç</button><span>Seçili: <b id="sc">0</b></span><select id="ay"></select><button class="p" id="ad">Yerleşkeyi değiştir</button><button id="ae">Yerleşke ekle (gezici)</button></div>
 <div id="pl"></div></section></main>
-<nav><button data-t="y" class="on">Yerleşkeler</button><button data-t="p">Personel</button></nav></div>
+<nav><button data-t="b" class="on">Bugün</button><button data-t="h">Hafta</button><button data-t="y">Yerleşkeler</button><button data-t="p">Personel</button></nav></div>
 <script>
 function hata(m){var d=document.getElementById('ld');d.hidden=false;d.innerHTML='<b>Uygulama başlatılamadı.</b><br>'+m+'<br><small>Ayrıntı için F12 &gt; Console sekmesine bakın.</small>'}
 addEventListener('error',function(e){hata(e.message)});addEventListener('unhandledrejection',function(e){hata(String(e.reason&&e.reason.message||e.reason))});
@@ -47,7 +54,7 @@ import {getAuth,GoogleAuthProvider,signInWithPopup,onAuthStateChanged,signOut} f
 import {initializeFirestore,persistentLocalCache,persistentMultipleTabManager,collection,doc,onSnapshot,setDoc,writeBatch} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import {cfg} from "./config.js";
 const app=initializeApp(cfg),auth=getAuth(app),db=initializeFirestore(app,{localCache:persistentLocalCache({tabManager:persistentMultipleTabManager()})});
-let uid,Y={},P={},shown=[];const sel=new Set(),$=s=>document.querySelector(s);
+let uid,Y={},P={},PR={},IS={},shown=[];const sel=new Set(),$=s=>document.querySelector(s);
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const norm=s=>String(s??'').trim().toLocaleLowerCase('tr'),slug=s=>norm(s).replace(/[^\p{L}\p{N}]+/gu,'-');
 const tr=(a,b)=>String(a).localeCompare(b,'tr'),pd=t=>doc(db,'users',uid,'calisanlar',t),yd=i=>doc(db,'users',uid,'yerleskeler',i);
@@ -94,10 +101,30 @@ let eid='';const fm=(id,y={})=>{eid=id;$('#yf').hidden=false;$('#f-ad').value=y.
 $('#yn').onclick=()=>fm('');$('#f-x').onclick=()=>$('#yf').hidden=true;
 $('#yl').onclick=e=>{const i=e.target.dataset.e;if(i)fm(i,Y[i])};
 $('#yf').onsubmit=e=>{e.preventDefault();const ad=$('#f-ad').value.trim();setDoc(yd(eid||slug(ad)),{ad,kisa:$('#f-kisa').value.trim()||ad,daire:$('#f-daire').value,sahaAd:$('#f-saha').value.trim(),tel:$('#f-tel').value.trim(),rapor:$('#f-rapor').value.trim()},{merge:true}).catch(x=>alert(x.message));$('#yf').hidden=true};
-document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('on',x==b));$('#t-y').hidden=b.dataset.t!='y';$('#t-p').hidden=b.dataset.t!='p'});
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('on',x==b));document.querySelectorAll('main section').forEach(s=>s.hidden=s.id!='t-'+b.dataset.t)});
 $('#gi').onclick=()=>signInWithPopup(auth,new GoogleAuthProvider()).catch(e=>alert(e.message));$('#u').onclick=()=>signOut(auth);
 onAuthStateChanged(auth,u=>{$('#ld').hidden=true;$('#lg').hidden=!!u;$('#app').hidden=!u;if(!u)return;uid=u.uid;$('#u').textContent=u.email+' (çıkış)';
-onSnapshot(collection(db,'users',uid,'yerleskeler'),s=>{Y={};s.forEach(d=>Y[d.id]=d.data());renderY();renderP()});
-onSnapshot(collection(db,'users',uid,'calisanlar'),s=>{P={};s.forEach(d=>P[d.id]=d.data());renderP();renderY()})});
+onSnapshot(collection(db,'users',uid,'yerleskeler'),s=>{Y={};s.forEach(d=>Y[d.id]=d.data());renderY();renderP();renderH();renderB();fillIy()});
+onSnapshot(collection(db,'users',uid,'calisanlar'),s=>{P={};s.forEach(d=>P[d.id]=d.data());renderP();renderY();renderB()});
+onSnapshot(collection(db,'users',uid,'program'),s=>{PR={};s.forEach(d=>PR[d.id]=d.data().items||[]);renderH();renderB()});
+onSnapshot(collection(db,'users',uid,'isler'),s=>{IS={};s.forEach(d=>IS[d.id]=d.data());renderB()})});
+const iso=d=>d.toLocaleDateString('sv'),addD=(s,n)=>{const d=new Date(s+'T12:00');d.setDate(d.getDate()+n);return iso(d)},mon=s=>{const d=new Date(s+'T12:00');d.setDate(d.getDate()-((d.getDay()+6)%7));return iso(d)};
+const GN=['Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi','Pazar'],fd=s=>s.slice(8)+'.'+s.slice(5,7),lab=i=>i=='__o'?'Ofis / Dökümantasyon':i=='__i'?'İzin / Diğer':(Y[i]?.kisa||Y[i]?.ad||i);
+const yopt=()=>Object.entries(Y).sort((a,b)=>tr(a[1].ad,b[1].ad)).map(([id,y])=>`<option value="${esc(id)}">${esc(y.kisa||y.ad)}</option>`).join('');
+let wk=mon(iso(new Date()));$('#idt').value=iso(new Date());
+const sd=(d,items)=>setDoc(doc(db,'users',uid,'program',d),{items}).catch(e=>alert(e.message)),fillIy=()=>{const v=$('#iy').value;$('#iy').innerHTML='<option value="">Yerleşke (isteğe bağlı)</option>'+yopt();$('#iy').value=v};
+function renderH(){const e=addD(wk,4);$('#wt').textContent=`${fd(wk)} – ${fd(e)}.${e.slice(0,4)}`;const opt='<option value="">＋ Ekle</option>'+yopt()+'<option value="__o">Ofis / Dökümantasyon</option><option value="__i">İzin / Diğer</option>';
+$('#wg').innerHTML=GN.slice(0,5).map((g,i)=>{const d=addD(wk,i),it=PR[d]||[];return `<div class="day${d==iso(new Date())?' td':''}"><b>${g}</b> <small>${fd(d)}</small>${it.map((x,j)=>`<div class="chip"><span>${esc(lab(x))}</span><button data-d="${d}" data-j="${j}" title="Kaldır">×</button></div>`).join('')}<select data-a="${d}">${opt}</select></div>`}).join('')}
+$('#wg').onclick=e=>{const d=e.target.dataset.d;if(d)sd(d,(PR[d]||[]).filter((_,j)=>j!=e.target.dataset.j))};
+$('#wg').onchange=e=>{const d=e.target.dataset.a;if(d&&e.target.value)sd(d,[...(PR[d]||[]),e.target.value])};
+$('#wp').onclick=()=>{wk=addD(wk,-7);renderH()};$('#wn').onclick=()=>{wk=addD(wk,7);renderH()};
+$('#wc').onclick=()=>{if(!confirm('Geçen haftanın programı bu haftaya kopyalansın mı? Bu haftadaki günlerin üzerine yazılır.'))return;for(let i=0;i<5;i++){const s=PR[addD(wk,i-7)];if(s)sd(addD(wk,i),[...s])}};
+function renderB(){const t=iso(new Date()),it=PR[t]||[],ac=Object.entries(IS).filter(([,x])=>!x.bitti),od=ac.filter(([,x])=>x.tarih<t).length,due=ac.filter(([,x])=>x.tarih<=t),bn=act().filter(p=>!ys(p).length).length;
+$('#bd').textContent=`${GN[(new Date().getDay()+6)%7]}, ${fd(t)}.${t.slice(0,4)}`;
+$('#bp').innerHTML=it.length?it.map(x=>`<span class="chip">${esc(lab(x))}</span>`).join(''):'<small>Bugün için program yok. Hafta sekmesinden ekleyin.</small>';
+$('#bs').innerHTML=`<div class="sy${od?' wr':''}"><b>${od}</b><small>geciken iş</small></div><div class="sy"><b>${due.length}</b><small>yapılacak iş</small></div><div class="sy${bn?' wr':''}"><b>${bn}</b><small>yerleşkesi bilinmeyen çalışan</small></div>`;
+const pr=x=>it.includes(x.yer)?0:1;$('#bl').innerHTML=due.sort((a,b)=>pr(a[1])-pr(b[1])||a[1].tarih.localeCompare(b[1].tarih)).map(([id,x])=>`<label class="row"><input type="checkbox" data-i="${id}"><div>${esc(x.baslik)}<br><small class="${x.tarih<t?'wr':''}">${x.yer?esc(lab(x.yer))+' · ':''}${x.tarih<t?'Gecikti, '+fd(x.tarih):'Bugün'}</small></div></label>`).join('')||'<p><small>Bekleyen iş yok.</small></p>'}
+$('#if').onsubmit=e=>{e.preventDefault();const b=$('#ib').value.trim();if(!b)return;setDoc(doc(db,'users',uid,'isler','i'+Date.now()),{baslik:b,yer:$('#iy').value,tarih:$('#idt').value||iso(new Date()),bitti:false}).catch(x=>alert(x.message));$('#ib').value=''};
+$('#bl').onchange=e=>{const i=e.target.dataset.i;if(i)setDoc(doc(db,'users',uid,'isler',i),{bitti:true},{merge:true}).catch(x=>alert(x.message))};
 navigator.serviceWorker?.register('sw.js');
 </script></body></html>
