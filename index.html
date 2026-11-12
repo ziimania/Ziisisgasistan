@@ -23,7 +23,7 @@ h2{font-size:1.15rem}.chip{display:flex;justify-content:space-between;align-item
 <div id="ld" style="padding:40px 16px">Yükleniyor…</div>
 <div id="lg" hidden style="padding:60px 16px;text-align:center"><h2>İSG Takip</h2><button class="p" id="gi">Google ile giriş yap</button></div>
 <div id="app" hidden>
-<header><b>İSG Takip</b><small id="u" style="cursor:pointer" title="Çıkış"></small></header>
+<header><b>İSG Takip</b><span><small id="gs" style="cursor:pointer;margin-right:14px">Ayarlar</small><small id="u" style="cursor:pointer" title="Çıkış"></small></span></header>
 <main>
 <div id="pv"></div>
 <section id="t-b"><h2 id="bd" style="margin:8px 0"></h2><div id="bp"></div><div class="sg" id="bs"></div>
@@ -33,6 +33,8 @@ h2{font-size:1.15rem}.chip{display:flex;justify-content:space-between;align-item
 <form id="ef"><select id="et"><option value="kaza">Kaza tutanağı</option><option value="egitim">Eğitim katılım formu</option><option value="diger">Diğer evrak</option></select>
 <input id="eb" placeholder="Konu (isteğe bağlı)"><select id="ey"></select><input id="ec" list="cl" placeholder="İlgili çalışan (isteğe bağlı)"><datalist id="cl"></datalist><input type="date" id="ed" title="Olay tarihi"><input id="ei" placeholder="İmzacılar (virgülle ayırın)"><button class="p">Kaydet</button></form></details>
 <div class="bar"><label><input type="checkbox" id="eh"> Tamamlananları da göster</label></div><div id="el"></div></section>
+<section id="t-s" hidden><h2>Ayarlar</h2><small>Bu bilgiler yalnızca bu cihazda saklanır. Telefona ve bilgisayara ayrı ayrı girin. Kurulum için KURULUM-DRIVE.md dosyasına bakın.</small>
+<form id="sf"><b>Google Drive bağlantısı</b><input id="s-u" placeholder="Apps Script adresi (.../exec ile biter)"><input id="s-t" type="password" placeholder="Gizli metin (TOKEN)"><div class="bar"><button class="p">Kaydet</button><button type="button" id="s-test">Bağlantıyı test et</button></div></form></section>
 <section id="t-y" hidden><div class="bar"><button class="p" id="yn">Yerleşke ekle</button></div>
 <form id="yf" hidden><input id="f-ad" placeholder="Yerleşke adı (belediye tablosundaki gibi)" required><input id="f-kisa" placeholder="Raporlarda kullanılacak kısa ad">
 <select id="f-daire"><option></option><option>Veteriner İşleri Dairesi Başkanlığı</option><option>Tarımsal Hizmetler Dairesi Başkanlığı</option></select>
@@ -137,14 +139,23 @@ const DN=['planli','hazir','imzada','tarama','tamam'],DL=['Planlandı','Hazırla
 const gun=x=>Math.max(0,Math.floor((Date.now()-new Date(x.gonderim||x.olusturma))/864e5)),ud=(id,o)=>setDoc(doc(db,'users',uid,'evraklar',id),o,{merge:true}).catch(e=>alert(e.message));
 function fillE(){const v=$('#ey').value;$('#ey').innerHTML='<option value="">Yerleşke (isteğe bağlı)</option>'+yopt();$('#ey').value=v;$('#cl').innerHTML=act().map(p=>`<option value="${esc(p.ad)}">`).join('')}
 function renderE(){const all=$('#eh').checked;$('#el').innerHTML=Object.entries(EV).filter(([,x])=>all||x.durum!='tamam').sort((a,b)=>(a[1].durum=='tamam')-(b[1].durum=='tamam')||gun(b[1])-gun(a[1])).map(([id,x])=>{const k=DN.indexOf(x.durum);
-return `<div class="row" style="align-items:flex-start"><div><b>${esc(x.baslik)}</b><br><small>${DL[k]} · ${x.yer?esc(lab(x.yer))+' · ':''}${x.tarih?fd(x.tarih)+'.'+x.tarih.slice(0,4)+' · ':''}${k<4?gun(x)+' gündür açık':''}</small><div>${(x.imza||[]).map((m,j)=>`<label style="margin-right:12px"><input type="checkbox" data-e="${id}" data-j="${j}" ${m.ok?'checked':''}> ${esc(m.ad)}</label>`).join('')}</div></div>
-<div style="display:flex;flex-direction:column;gap:6px">${k<4?`<button class="p" data-n="${id}">${DA[k]}</button>`:''}${k>0?`<button data-p="${id}">Geri al</button>`:''}<button data-x="${id}">Sil</button></div></div>`}).join('')||'<p><small>Evrak yok. Evrak ekle düğmesiyle başlayın.</small></p>'}
+return `<div class="row" style="align-items:flex-start"><div><b>${esc(x.baslik)}</b><br><small>${DL[k]} · ${x.yer?esc(lab(x.yer))+' · ':''}${x.tarih?fd(x.tarih)+'.'+x.tarih.slice(0,4)+' · ':''}${k<4?gun(x)+' gündür açık':''}</small>${(x.dosyalar||[]).length?'<br><small>Tarama: '+x.dosyalar.map((f,i)=>`<a href="${esc(f.url)}" target="_blank">Sayfa ${i+1}</a>`).join(' · ')+'</small>':''}<div>${(x.imza||[]).map((m,j)=>`<label style="margin-right:12px"><input type="checkbox" data-e="${id}" data-j="${j}" ${m.ok?'checked':''}> ${esc(m.ad)}</label>`).join('')}</div></div>
+<div style="display:flex;flex-direction:column;gap:6px">${k<4?`<button class="p" data-n="${id}">${DA[k]}</button>`:''}${k>=2?`<label class="b">Tarama yükle<input type="file" accept="image/*,application/pdf" multiple hidden data-u="${id}"></label>`:''}${k>0?`<button data-p="${id}">Geri al</button>`:''}<button data-x="${id}">Sil</button></div></div>`}).join('')||'<p><small>Evrak yok. Evrak ekle düğmesiyle başlayın.</small></p>'}
 $('#eh').onchange=renderE;
 $('#et').onchange=()=>$('#ei').value=TUR[$('#et').value][1];$('#et').onchange();
 $('#ef').onsubmit=e=>{e.preventDefault();const t=$('#et').value,c=$('#ec').value.trim(),b=$('#eb').value.trim();
 setDoc(doc(db,'users',uid,'evraklar','e'+Date.now()),{tur:t,baslik:TUR[t][0]+(c?' – '+c:'')+(b?' – '+b:''),yer:$('#ey').value,tarih:$('#ed').value,calisan:c,imza:$('#ei').value.split(',').map(s=>s.trim()).filter(Boolean).map(ad=>({ad,ok:false})),durum:'planli',olusturma:new Date().toISOString(),gonderim:''}).catch(x=>alert(x.message));$('#eb').value=$('#ec').value=''};
 $('#el').onclick=e=>{const d=e.target.dataset;if(d.n){const k=DN.indexOf(EV[d.n].durum)+1;ud(d.n,{durum:DN[k],...(DN[k]=='imzada'?{gonderim:new Date().toISOString()}:{})})}
 if(d.p)ud(d.p,{durum:DN[DN.indexOf(EV[d.p].durum)-1]});if(d.x&&confirm('Evrak silinsin mi?'))deleteDoc(doc(db,'users',uid,'evraklar',d.x)).catch(x=>alert(x.message))};
-$('#el').onchange=e=>{const d=e.target.dataset;if(d.e)ud(d.e,{imza:EV[d.e].imza.map((m,j)=>j==d.j?{...m,ok:e.target.checked}:m)})};
+$('#el').onchange=e=>{const d=e.target.dataset;if(d.u){yukle(d.u,[...e.target.files]);e.target.value=''}if(d.e)ud(d.e,{imza:EV[d.e].imza.map((m,j)=>j==d.j?{...m,ok:e.target.checked}:m)})};
+const gd=()=>({u:localStorage.getItem('gsUrl'),t:localStorage.getItem('gsTok')}),msg=m=>$('#pv').innerHTML=`<div class="pv">${m}</div>`;
+const kucult=async f=>{if(!f.type.startsWith('image/'))return f;const b=await createImageBitmap(f),r=Math.min(1,1600/Math.max(b.width,b.height)),c=document.createElement('canvas');c.width=Math.round(b.width*r);c.height=Math.round(b.height*r);c.getContext('2d').drawImage(b,0,0,c.width,c.height);return new Promise(ok=>c.toBlob(ok,'image/jpeg',.8))};
+const b64=b=>new Promise(ok=>{const r=new FileReader();r.onload=()=>ok(r.result.split(',')[1]);r.readAsDataURL(b)});
+const post=async o=>{const {u,t}=gd();if(!u||!t)throw new Error('Önce Ayarlar bölümünde Drive bağlantısını girin.');const r=await fetch(u,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({token:t,...o})}),j=await r.json();if(!j.ok)throw new Error(j.hata||'Yükleme başarısız');return j};
+async function yukle(id,files){const x=EV[id],l=[...(x.dosyalar||[])];try{for(const [i,f] of files.entries()){msg(`Yükleniyor ${i+1}/${files.length}…`);const b=await kucult(f),ad=slug(x.baslik).slice(0,40)+'-'+Date.now()+'-'+(i+1)+(b.type=='application/pdf'?'.pdf':'.jpg'),j=await post({alt:'Evrak',ad,tur:b.type||'image/jpeg',veri:await b64(b)});l.push({ad,url:j.url})}
+await ud(id,{dosyalar:l});msg(`${files.length} dosya Drive'a yüklendi.`);if(x.durum!='tamam'&&confirm('Yükleme tamam. Evrak tamamlandı olarak işaretlensin mi?'))ud(id,{durum:'tamam'})}catch(e){if(l.length>(x.dosyalar||[]).length)ud(id,{dosyalar:l});msg('<span class="wr">Yükleme hatası: '+esc(e.message)+'</span>')}}
+$('#gs').onclick=()=>{document.querySelectorAll('nav button').forEach(x=>x.classList.remove('on'));document.querySelectorAll('main section').forEach(s=>s.hidden=s.id!='t-s');$('#s-u').value=gd().u||'';$('#s-t').value=gd().t||''};
+$('#sf').onsubmit=e=>{e.preventDefault();localStorage.setItem('gsUrl',$('#s-u').value.trim());localStorage.setItem('gsTok',$('#s-t').value.trim());msg('Ayarlar bu cihaza kaydedildi.')};
+$('#s-test').onclick=async()=>{localStorage.setItem('gsUrl',$('#s-u').value.trim());localStorage.setItem('gsTok',$('#s-t').value.trim());try{await post({test:1});msg('Bağlantı tamam.')}catch(e){msg('<span class="wr">Bağlantı kurulamadı: '+esc(e.message)+'</span>')}};
 navigator.serviceWorker?.register('sw.js');
 </script></body></html>
