@@ -16,6 +16,7 @@ input,select,button,.b{font:inherit;padding:9px 11px;border:1px solid var(--ln);
 .bar{display:flex;flex-wrap:wrap;gap:8px;padding:10px 0}.bar input[type=search]{flex:1;min-width:140px}
 .pv{border-left:3px solid var(--ac);padding:6px 12px;margin:8px 0}.wr{color:var(--wr)}form{display:grid;gap:8px;padding:10px 0}
 </style></head><body>
+<div id="ld" style="padding:40px 16px">Yükleniyor…</div>
 <div id="lg" hidden style="padding:60px 16px;text-align:center"><h2>İSG Takip</h2><button class="p" id="gi">Google ile giriş yap</button></div>
 <div id="app" hidden>
 <header><b>İSG Takip</b><small id="u" style="cursor:pointer" title="Çıkış"></small></header>
@@ -34,6 +35,11 @@ input,select,button,.b{font:inherit;padding:9px 11px;border:1px solid var(--ln);
 <div class="bar"><button id="sa">Listedekileri seç</button><span>Seçili: <b id="sc">0</b></span><select id="ay"></select><button class="p" id="ad">Yerleşkeyi değiştir</button><button id="ae">Yerleşke ekle (gezici)</button></div>
 <div id="pl"></div></section></main>
 <nav><button data-t="y" class="on">Yerleşkeler</button><button data-t="p">Personel</button></nav></div>
+<script>
+function hata(m){var d=document.getElementById('ld');d.hidden=false;d.innerHTML='<b>Uygulama başlatılamadı.</b><br>'+m+'<br><small>Ayrıntı için F12 &gt; Console sekmesine bakın.</small>'}
+addEventListener('error',function(e){hata(e.message)});addEventListener('unhandledrejection',function(e){hata(String(e.reason&&e.reason.message||e.reason))});
+setTimeout(function(){if(document.getElementById('lg').hidden&&document.getElementById('app').hidden)hata('Firebase dosyaları yüklenemedi veya config.js hatalı.')},6000);
+</script>
 <script type="module">
 import {initializeApp} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import {getAuth,GoogleAuthProvider,signInWithPopup,onAuthStateChanged,signOut} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
@@ -86,7 +92,7 @@ $('#yl').onclick=e=>{const i=e.target.dataset.e;if(i)fm(i,Y[i])};
 $('#yf').onsubmit=e=>{e.preventDefault();const ad=$('#f-ad').value.trim();setDoc(yd(eid||slug(ad)),{ad,kisa:$('#f-kisa').value.trim()||ad,daire:$('#f-daire').value,sahaAd:$('#f-saha').value.trim(),tel:$('#f-tel').value.trim(),rapor:$('#f-rapor').value.trim()},{merge:true}).catch(x=>alert(x.message));$('#yf').hidden=true};
 document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('on',x==b));$('#t-y').hidden=b.dataset.t!='y';$('#t-p').hidden=b.dataset.t!='p'});
 $('#gi').onclick=()=>signInWithPopup(auth,new GoogleAuthProvider()).catch(e=>alert(e.message));$('#u').onclick=()=>signOut(auth);
-onAuthStateChanged(auth,u=>{$('#lg').hidden=!!u;$('#app').hidden=!u;if(!u)return;uid=u.uid;$('#u').textContent=u.email+' (çıkış)';
+onAuthStateChanged(auth,u=>{$('#ld').hidden=true;$('#lg').hidden=!!u;$('#app').hidden=!u;if(!u)return;uid=u.uid;$('#u').textContent=u.email+' (çıkış)';
 onSnapshot(collection(db,'users',uid,'yerleskeler'),s=>{Y={};s.forEach(d=>Y[d.id]=d.data());renderY();renderP()});
 onSnapshot(collection(db,'users',uid,'calisanlar'),s=>{P={};s.forEach(d=>P[d.id]=d.data());renderP();renderY()})});
 navigator.serviceWorker?.register('sw.js');
