@@ -1,6 +1,6 @@
 <!doctype html><html lang="tr"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>İSG Takip</title><link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#14532d">
+<title>İSG Takip v7</title><link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#14532d">
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 :root{--bg:#f2f6f4;--sf:#fff;--fg:#12201a;--mu:#5c6b63;--ln:#dde5e0;--ac:#0b6b53;--as:#e2f3ee;--on:#fff;--wr:#a15c07;--ws:#fdf1d8;--sh:0 1px 2px #0b2a2012,0 4px 14px #0b2a2010;--rd:14px}
@@ -77,7 +77,8 @@ import {getAuth,GoogleAuthProvider,signInWithPopup,onAuthStateChanged,signOut} f
 import {initializeFirestore,persistentLocalCache,persistentMultipleTabManager,collection,doc,onSnapshot,setDoc,deleteDoc,writeBatch} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import {cfg} from "./config.js";
 const app=initializeApp(cfg),auth=getAuth(app),db=initializeFirestore(app,{localCache:persistentLocalCache({tabManager:persistentMultipleTabManager()})});
-let uid,Y={},P={},PR={},IS={},EV={},SB={},shown=[];const sel=new Set(),$=s=>document.querySelector(s);
+let uid,Y={},P={},PR={},IS={},EV={},SB={},shown=[];const sel=new Set(),$=s=>document.querySelector(s)||(console.warn('Eksik öğe: '+s),stub());
+function stub(){return new Proxy(function(){},{get:(t,k)=>k=='style'?{}:k=='classList'?{toggle(){},add(){},remove(){}}:stub(),set:()=>true,apply:()=>stub()})}
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const norm=s=>String(s??'').trim().toLocaleLowerCase('tr'),slug=s=>norm(s).replace(/[^\p{L}\p{N}]+/gu,'-');
 const tr=(a,b)=>String(a).localeCompare(b,'tr'),pd=t=>doc(db,'users',uid,'calisanlar',t),yd=i=>doc(db,'users',uid,'yerleskeler',i);
@@ -187,9 +188,9 @@ $('#es').onchange=()=>$('#ei').value=(SB[$('#es').value]?.imzacilar||[]).join(',
 $('#en').onclick=()=>{fillS();$('#es').onchange();$('#eg').showModal()};
 $('#ef').onsubmit=e=>{e.preventDefault();const s=SB[$('#es').value]||{ad:'Evrak',grup:'Diğer'},c=$('#ec').value.trim(),b=$('#eb').value.trim();
 setDoc(doc(db,'users',uid,'evraklar','e'+Date.now()),{sab:$('#es').value,grup:s.grup||'Diğer',ust:!!s.ust,baslik:s.ad+(c?' – '+c:'')+(b?' – '+b:''),yer:$('#ey').value,tarih:$('#ed').value,calisan:c,imza:csv($('#ei').value).map(ad=>({ad,d:'bekliyor'})),durum:'planli',olusturma:new Date().toISOString(),gonderim:''}).catch(x=>alert(x.message));$('#eg').close();$('#eb').value=$('#ec').value=''};
-$('#el').onclick=e=>{const d=e.target.dataset;if(d.hx)return hopen(d.hx,+d.j);if(d.hr)return ud(d.hr,{imza:EV[d.hr].imza.map((m,i)=>i==+d.j?{...m,haric:m.haric.filter(t=>t!=d.t)}:m)});if(d.n){const x=EV[d.n];if(x.durum=='imza'&&x.imza.some(m=>m.d=='bekliyor'))return alert('İmzası bekleyen kişiler var. Her biri için imzaladı veya katılmadı seçin.');const k=nx(x);ud(d.n,{durum:k,...(k=='imza'?{gonderim:new Date().toISOString()}:{})})}
+$('#el').onclick=e=>{const d=e.target.dataset,i0=d.n||d.p||d.x||d.hx||d.hr;if(i0&&!EV[i0])return;if(d.hx)return hopen(d.hx,+d.j);if(d.hr)return ud(d.hr,{imza:EV[d.hr].imza.map((m,i)=>i==+d.j?{...m,haric:m.haric.filter(t=>t!=d.t)}:m)});if(d.n){const x=EV[d.n];if(x.durum=='imza'&&x.imza.some(m=>m.d=='bekliyor'))return alert('İmzası bekleyen kişiler var. Her biri için imzaladı veya katılmadı seçin.');const k=nx(x);ud(d.n,{durum:k,...(k=='imza'?{gonderim:new Date().toISOString()}:{})})}
 if(d.p)ud(d.p,{durum:pv(EV[d.p])});if(d.x&&confirm('Evrak silinsin mi?'))deleteDoc(doc(db,'users',uid,'evraklar',d.x)).catch(x=>alert(x.message))};
-$('#el').onchange=e=>{const d=e.target.dataset;if(d.u){yukle(d.u,[...e.target.files]);e.target.value=''}if(d.e)ud(d.e,{imza:EV[d.e].imza.map((m,j)=>j==d.j?{...m,d:e.target.value}:m)})};
+$('#el').onchange=e=>{const d=e.target.dataset;if((d.e||d.u)&&!EV[d.e||d.u])return;if(d.u){yukle(d.u,[...e.target.files]);e.target.value=''}if(d.e)ud(d.e,{imza:EV[d.e].imza.map((m,j)=>j==d.j?{...m,d:e.target.value}:m)})};
 document.addEventListener('click',e=>{const d=e.target.dataset||{};if(d.cl)$('#'+d.cl).close();if(d.bs)basla(d.bs)});
 let sid='';const sfill=id=>{sid=id;const s=SB[id]||{};$('#sft').textContent=id?'Şablonu düzenle':'Yeni şablon';$('#sa1').value=s.ad||'';$('#sa2').value=s.grup||'';$('#sa3').value=(s.imzacilar||[]).join(', ');$('#sa4').value=s.tekrar||0;$('#sa5').value=s.sonraki||'';$('#sa6').checked=!!s.ust};
 $('#sb').onclick=()=>{sfill('');fillS();$('#sg').showModal()};$('#sa7').onclick=()=>sfill('');
