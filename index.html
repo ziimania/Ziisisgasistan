@@ -1,6 +1,6 @@
 <!doctype html><html lang="tr"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>İSG Takip v12</title><link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#1c2b4d">
+<title>İSG Takip v13</title><link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#1c2b4d">
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 :root{--bg:#eef3fa;--sf:#fff;--fg:#14213d;--mu:#5b6b85;--ln:#dbe4f1;--ac:#2f6bd8;--as:#e3edfc;--on:#fff;--wr:#b45f06;--ws:#fdf0d9;--sh:0 1px 2px #1c2b4d14,0 4px 14px #1c2b4d12;--rd:14px}
@@ -150,7 +150,7 @@ $('#pl').onchange=e=>{const t=e.target.dataset.t;if(t){e.target.checked?sel.add(
 let eid='';const fm=(id,y={})=>{eid=id;$('#yg').showModal();$('#f-ad').value=y.ad||'';$('#f-kisa').value=y.kisa||'';$('#f-daire').value=y.daire||'';$('#f-saha').value=y.sahaAd||'';$('#f-tel').value=y.tel||'';$('#f-rapor').value=y.rapor||'';$('#f-faal').value=y.faal||'';$('#f-teh').value=y.tehlike||'';$('#f-konum').value=y.konum||'';$('#f-ll').value=y.ll||''};
 $('#yn').onclick=()=>fm('');$('#f-x').onclick=()=>$('#yg').close();
 $('#yl').onclick=e=>{const i=e.target.dataset.e;if(i)return fm(i,Y[i]);if(e.target.closest('a'))return;const r=e.target.closest('[data-y]');if(r)det(r.dataset.y)};
-$('#yf').onsubmit=e=>{e.preventDefault();const ad=$('#f-ad').value.trim();setDoc(yd(eid||slug(ad)),{ad,kisa:$('#f-kisa').value.trim()||ad,daire:$('#f-daire').value,sahaAd:$('#f-saha').value.trim(),tel:$('#f-tel').value.trim(),rapor:$('#f-rapor').value.trim(),faal:$('#f-faal').value.trim(),tehlike:$('#f-teh').value,konum:$('#f-konum').value.trim(),ll:$('#f-ll').value.trim()},{merge:true}).catch(x=>alert(x.message));$('#yg').close()};
+$('#yf').onsubmit=e=>{e.preventDefault();delete LQ[eid||slug($('#f-ad').value.trim())];const ad=$('#f-ad').value.trim();setDoc(yd(eid||slug(ad)),{ad,kisa:$('#f-kisa').value.trim()||ad,daire:$('#f-daire').value,sahaAd:$('#f-saha').value.trim(),tel:$('#f-tel').value.trim(),rapor:$('#f-rapor').value.trim(),faal:$('#f-faal').value.trim(),tehlike:$('#f-teh').value,konum:$('#f-konum').value.trim(),ll:$('#f-ll').value.trim()},{merge:true}).catch(x=>alert(x.message));$('#yg').close()};
 document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('on',x==b));document.querySelectorAll('main section').forEach(s=>s.hidden=s.id!='t-'+b.dataset.t)});
 $('#gi').onclick=()=>signInWithPopup(auth,new GoogleAuthProvider()).catch(e=>alert(e.message));$('#u').onclick=()=>signOut(auth);
 onAuthStateChanged(auth,u=>{$('#ld').hidden=true;$('#lg').hidden=!!u;$('#app').hidden=!u;if(!u)return;uid=u.uid;$('#u').textContent=u.email+' (çıkış)';
@@ -302,7 +302,9 @@ $('#pg').oncancel=e=>{if(dirt()&&!confirm('Kaydedilmemiş değişiklikler var. K
 $('#pl').onclick=e=>{if(e.target.matches('input'))return;const c=e.target.closest('[data-c]');if(c)pcard(c.dataset.c)};
 const WX=JSON.parse(localStorage.wx||'{}'),WF={},TH=()=>+localStorage.wr1||60,TW=()=>+localStorage.wr2||40,MER=[36.8121,34.6415];let WE=0;
 const wi=c=>c==0?'☀️':c<3?'🌤️':c==3?'☁️':c<50?'🌫️':c<60?'🌦️':c<80?(c<70?'🌧️':'❄️'):c<90?'🌧️':'⛈️';
-const ll=id=>{const y=Y[id]||{};let m=String(y.ll||'').match(/(-?\d+\.\d+)\s*[,; ]\s*(-?\d+\.\d+)/);if(!m&&y.konum)m=y.konum.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/)||y.konum.match(/!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/)||y.konum.match(/[?&](?:q|ll)=(-?\d+\.\d+),(-?\d+\.\d+)/);return m?[+m[1],+m[2]]:MER};
+const llp=y=>{let m=String(y.ll||'').match(/(-?\d+\.\d+)\s*[,; ]\s*(-?\d+\.\d+)/);if(!m&&y.konum)m=y.konum.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/)||y.konum.match(/!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/)||y.konum.match(/[?&](?:q|ll)=(-?\d+\.\d+),(-?\d+\.\d+)/)||y.konum.match(/\/maps\/(?:search|place)\/(-?\d+\.\d+),[+\s]*(-?\d+\.\d+)/);return m?[+m[1],+m[2]]:null},LQ={};
+const ll=id=>llp(Y[id]||{})||(coz(id),MER);
+async function coz(id){const y=Y[id];if(!y||!/^https?:/.test(y.konum||'')||LQ[id])return;LQ[id]=1;try{const j=await post({coz:y.konum});setDoc(yd(id),{ll:j.lat+', '+j.lon},{merge:true});tst('Konum bulundu: '+(y.kisa||y.ad))}catch(e){}}
 function wfetch(c){const k=c.join(',');if(Date.now()-(WF[k]||0)<6e4||(WX[k]&&Date.now()-WX[k].t<108e5))return;WF[k]=Date.now();
 fetch(`https://api.open-meteo.com/v1/forecast?latitude=${c[0]}&longitude=${c[1]}&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,wind_speed_10m_max&timezone=auto&forecast_days=16`).then(r=>r.json()).then(j=>{if(!j.daily)throw 0;WX[k]={t:Date.now(),d:j.daily};localStorage.wx=JSON.stringify(WX);WE=0;renderH()}).catch(()=>{WE=1;renderW()})}
 const wd=(c,d)=>{const x=WX[c.join(',')]?.d,i=x?x.time.indexOf(d):-1;return i>=0?{ic:wi(x.weather_code[i]),mx:Math.round(x.temperature_2m_max[i]),mn:Math.round(x.temperature_2m_min[i]),r:x.precipitation_probability_max[i],w:Math.round(x.wind_speed_10m_max[i])}:null};
