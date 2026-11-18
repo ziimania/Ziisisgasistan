@@ -1,6 +1,6 @@
 <!doctype html><html lang="tr"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>İSG Takip v20</title><link rel="icon" href="favicon.png"><link rel="apple-touch-icon" href="favicon.png"><link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#1c2b4d">
+<title>İSG Takip v21</title><link rel="icon" href="favicon.png"><link rel="apple-touch-icon" href="favicon.png"><link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#1c2b4d">
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 :root{--bg:#eef3fa;--sf:#fff;--fg:#14213d;--mu:#5b6b85;--ln:#dbe4f1;--ac:#2f6bd8;--as:#e3edfc;--on:#fff;--wr:#b45f06;--ws:#fdf0d9;--sh:0 1px 2px #1c2b4d14,0 4px 14px #1c2b4d12;--rd:14px}
@@ -164,10 +164,10 @@ let eid='';const fm=(id,y={})=>{eid=id;$('#yg').showModal();$('#f-ad').value=y.a
 $('#yn').onclick=()=>fm('');$('#f-x').onclick=()=>$('#yg').close();
 $('#yl').onclick=e=>{const i=e.target.dataset.e;if(i)return fm(i,Y[i]);if(e.target.closest('a'))return;const r=e.target.closest('[data-y]');if(r)det(r.dataset.y)};
 $('#yf').onsubmit=e=>{e.preventDefault();delete LQ[eid||slug($('#f-ad').value.trim())];const ad=$('#f-ad').value.trim();setDoc(yd(eid||slug(ad)),{ad,kisa:$('#f-kisa').value.trim()||ad,daire:$('#f-daire').value,sahaAd:$('#f-saha').value.trim(),tel:$('#f-tel').value.trim(),rapor:$('#f-rapor').value.trim(),faal:$('#f-faal').value.trim(),tehlike:$('#f-teh').value,konum:$('#f-konum').value.trim(),ll:$('#f-ll').value.trim()},{merge:true}).catch(x=>alert(x.message));$('#yg').close()};
-document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('on',x==b));document.querySelectorAll('main section').forEach(s=>s.hidden=s.id!='t-'+b.dataset.t)});
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('on',x==b));document.querySelectorAll('main section').forEach(s=>s.hidden=s.id!='t-'+b.dataset.t);if(b.dataset.t=='f')renderF()});
 $('#gi').onclick=()=>signInWithPopup(auth,new GoogleAuthProvider()).catch(e=>alert(e.message));$('#u').onclick=()=>signOut(auth);
 onAuthStateChanged(auth,u=>{$('#ld').hidden=true;$('#lg').hidden=!!u;$('#app').hidden=!u;if(!u)return;uid=u.uid;$('#u').textContent=u.email+' (çıkış)';
-onSnapshot(collection(db,'users',uid,'yerleskeler'),s=>{Y={};s.forEach(d=>Y[d.id]=d.data());renderY();renderP();renderH();renderB();fillIy();fillE()});
+onSnapshot(collection(db,'users',uid,'yerleskeler'),s=>{Y={};s.forEach(d=>Y[d.id]=d.data());renderY();renderP();renderH();renderB();fillIy();fillE();renderF()});
 onSnapshot(collection(db,'users',uid,'calisanlar'),s=>{P={};s.forEach(d=>P[d.id]=d.data());renderP();renderY();renderB();fillE()});
 onSnapshot(collection(db,'users',uid,'program'),s=>{PR={};s.forEach(d=>PR[d.id]=d.data().items||[]);renderH();renderB()});
 onSnapshot(collection(db,'users',uid,'isler'),s=>{IS={};s.forEach(d=>IS[d.id]=d.data());renderB()});
@@ -349,9 +349,10 @@ $('#zadd').onclick=()=>fopen('');$('#zlist').onclick=e=>{const r=e.target.closes
 $('#zl').onchange=()=>{if(!zid)$('#zs').value=Y[$('#zl').value]?.rapor||''};$('#zp').onchange=e=>{zph=[...e.target.files];$('#zv').textContent=zph.length+' fotoğraf seçildi'};
 $('#za').onclick=async()=>{const n=$('#zn').value.trim();if(!n)return alert('Önce kısa bir saha notu yazın.');const b=$('#za');b.disabled=true;b.textContent='Düzenleniyor…';try{const img=$('#zc').checked&&zph[0]?await b64(await kucult(zph[0])):null,r=await gem(n,img);$('#zt').value=r.tespit||'';$('#zo').value=r.oneri||'';$('#zy').value=(r.yasal||[]).join('\n');tst('AI taslağı hazır, kontrol edin')}catch(e){alert('AI hatası: '+e.message)}b.disabled=false;b.textContent='AI ile düzenle'};
 $('#zx').onclick=()=>{if(confirm('Tespit silinsin mi?')){deleteDoc(doc(db,'users',uid,'bulgular',zid)).catch(x=>alert(x.message));$('#zg').close()}};
-$('#zf').onsubmit=async e=>{e.preventDefault();const t=$('#zt').value.trim();if(!t)return alert('Tespit boş olamaz.');const id=zid||'z'+Date.now(),old=BU[id]||{},foto=[...(old.foto||[])];
-if(zph.length){try{for(const [i,f] of zph.entries()){up(`Fotoğraf ${i+1}/${zph.length} yükleniyor…`,Math.round(i/zph.length*100));const b=await kucult(f),ad='saha-'+Date.now()+'-'+(i+1)+'.jpg',j=await post({alt:'Saha',ad,tur:b.type||'image/jpeg',veri:await b64(b)});foto.push({ad,url:j.url})}$('#up').hidden=true}catch(x){up('✗ Fotoğraflar yüklenemedi: '+esc(hm(x))+' Tespit yine de kaydedildi.',null,'er')}}
-setDoc(doc(db,'users',uid,'bulgular',id),{yer:$('#zl').value,tarih:old.tarih||iso(new Date()),tespit:t,oneri:$('#zo').value.trim(),yasal:$('#zy').value.split('\n').map(s=>s.trim()).filter(Boolean),sorumlu:$('#zs').value.trim(),termin:$('#zr').value.trim(),durum:$('#zd').value,foto,olusturma:old.olusturma||new Date().toISOString()}).catch(x=>alert(x.message));$('#zg').close();tst('Kaydedildi ✓')};
+$('#zf').onsubmit=e=>{e.preventDefault();const t=$('#zt').value.trim();if(!t)return alert('Tespit boş olamaz.');const id=zid||'z'+Date.now(),old=BU[id]||{},fs=[...zph];
+setDoc(doc(db,'users',uid,'bulgular',id),{yer:$('#zl').value,tarih:old.tarih||iso(new Date()),tespit:t,oneri:$('#zo').value.trim(),yasal:$('#zy').value.split('\n').map(s=>s.trim()).filter(Boolean),sorumlu:$('#zs').value.trim(),termin:$('#zr').value.trim(),durum:$('#zd').value,foto:old.foto||[],olusturma:old.olusturma||new Date().toISOString()},{merge:true}).catch(x=>alert(x.message));
+$('#zg').close();zph=[];tst('Kaydedildi ✓');if(fs.length)upz(id,fs)};
+async function upz(id,fs){const n=fs.length,f0=[...(BU[id]?.foto||[])],foto=[...f0];try{for(const [i,f] of fs.entries()){up(`Fotoğraf ${i+1}/${n} yükleniyor…`,Math.round(i/n*100));const b=await kucult(f),ad='saha-'+Date.now()+'-'+(i+1)+'.jpg',j=await post({alt:'Saha',ad,tur:b.type||'image/jpeg',veri:await b64(b)});foto.push({ad,url:j.url})}up(`✓ ${n} fotoğraf Drive'a yüklendi`,100,'ok')}catch(x){up('✗ Fotoğraflar yüklenemedi: '+esc(hm(x))+(foto.length>f0.length?' ('+(foto.length-f0.length)+' fotoğraf yüklendi)':'')+' Tespit kaydedildi, fotoğrafı sonra tekrar ekleyebilirsiniz.',null,'er')}finally{if(foto.length>f0.length)setDoc(doc(db,'users',uid,'bulgular',id),{foto},{merge:true}).catch(()=>{})}}
 pinit();
 navigator.serviceWorker?.register('sw.js');
 </script></body></html>
