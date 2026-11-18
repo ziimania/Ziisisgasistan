@@ -1,6 +1,6 @@
 <!doctype html><html lang="tr"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>İSG Takip v18</title><link rel="icon" href="favicon.png"><link rel="apple-touch-icon" href="favicon.png"><link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#1c2b4d">
+<title>İSG Takip v19</title><link rel="icon" href="favicon.png"><link rel="apple-touch-icon" href="favicon.png"><link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#1c2b4d">
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 :root{--bg:#eef3fa;--sf:#fff;--fg:#14213d;--mu:#5b6b85;--ln:#dbe4f1;--ac:#2f6bd8;--as:#e3edfc;--on:#fff;--wr:#b45f06;--ws:#fdf0d9;--sh:0 1px 2px #1c2b4d14,0 4px 14px #1c2b4d12;--rd:14px}
@@ -44,6 +44,8 @@ header{justify-content:flex-end}.logo{display:none}main{max-width:1040px;padding
 @media(min-width:900px){nav button{flex-direction:row;gap:10px;font-size:.95rem}.prow{grid-template-columns:28px 2.3fr 1.1fr 1.5fr 1.8fr 64px}.d{display:block}.mo{display:none}.phd{display:grid;background:none;border:0;box-shadow:none;padding:2px 14px;margin:0;color:var(--mu);font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em}#pl:not(.pg){display:block}}
 .day .chip{border-radius:12px}.yrow{grid-template-columns:40px 1fr auto}
 @media(min-width:900px){#yl{display:block}.yrow{grid-template-columns:40px 2fr 1.4fr .7fr 1.2fr auto}}
+.erow{grid-template-columns:1fr auto}
+@media(min-width:900px){.erow{grid-template-columns:2.6fr 1.3fr 1.3fr 1.3fr .5fr}}
 </style></head><body>
 <div id="ld" style="padding:40px 16px">Yükleniyor…</div>
 <div id="lg" hidden style="padding:60px 16px;text-align:center"><h2>İSG Takip</h2><button class="p" id="gi">Google ile giriş yap</button></div>
@@ -54,7 +56,7 @@ header{justify-content:flex-end}.logo{display:none}main{max-width:1040px;padding
 <section id="t-b"><div class="ph"><div><h2 id="bd"></h2><p>Bugünün programı ve bekleyen işler</p></div></div><div id="bp"></div><div class="sg" id="bs"></div>
 <form id="if" class="bar"><input id="ib" placeholder="Yeni iş ekle" style="flex:1;min-width:160px"><select id="iy"></select><input type="date" id="idt"><button class="p">Ekle</button></form><div id="bl"></div><div id="bdue"></div><h2 style="margin-top:24px">Evrak ve imza takibi</h2><div id="be"></div></section>
 <section id="t-h" hidden><div class="bar"><button id="wp">◀</button><b id="wt"></b><button id="wn">▶</button><button id="wc">Geçen haftayı kopyala</button></div><div id="wxs" class="box"></div><div id="ws"></div><div class="wk" id="wg"></div></section>
-<section id="t-e" hidden><div class="ph"><div><h2>Evrak ve imza</h2><p>Her evrakın aşamalarını ve eksik imzaları buradan izle</p></div><span class="bar"><button id="sb">Şablonlar</button><button class="p" id="en">＋ Evrak ekle</button></span></div>
+<section id="t-e" hidden><div class="ph"><div><h2>Evrak ve imza</h2><div id="epc" class="bar" style="padding:4px 0 0"></div></div><span class="bar"><button id="sb">Şablonlar</button><button class="p" id="en">＋ Evrak ekle</button></span></div>
 <div id="edue"></div><div class="bar"><label class="chk"><input type="checkbox" id="eh"> Tamamlananları da göster</label></div><div id="el"></div></section>
 <section id="t-s" hidden><div class="ph"><div><h2>Ayarlar</h2><p>Bu bilgiler yalnızca bu cihazda saklanır. Telefona ve bilgisayara ayrı ayrı girin. Kurulum için KURULUM-DRIVE.md dosyasına bakın.</p></div></div>
 <form id="sf" class="box"><div class="bt">Google Drive bağlantısı</div><input id="s-u" placeholder="Apps Script adresi (.../exec ile biter)"><input id="s-t" type="password" placeholder="Gizli metin (TOKEN)"><div class="bar"><button class="p">Kaydet</button><button type="button" id="s-test">Bağlantıyı test et</button></div></form>
@@ -208,8 +210,8 @@ if(c0=='tarama')a=`<label class="b">Tarama yükle<input type="file" accept="imag
 if(c0=='ust')a=`<button class="p" data-n="${id}">Üst işverene gönderildi</button>`;
 return `<div class="box"><b>${esc(x.baslik)}</b><br><small>${x.calisanlar.length?'İlgili: '+x.calisanlar.map(esc).join(', ')+' · ':''}${x.yer?esc(lab(x.yer))+' · ':''}${x.tarih?fd(x.tarih)+'.'+x.tarih.slice(0,4)+' · ':''}${c0!='tamam'?gun(x)+' gündür açık':'Tamamlandı'}${hxl(x).length?' · '+hxl(x).length+' kişinin imzası eksik':''}</small><div style="margin:8px 0">${tree}</div>${ek}<div class="bar">${a}</div><div class="bar">${k>0?`<button data-p="${id}">Geri al</button>`:''}<button data-x="${id}">Sil</button></div></div>`}
 function renderE(){const all=$('#eh').checked,g={};Object.entries(EV).filter(([,x])=>all||x.durum!='tamam'||hxl(x).length).sort((a,b)=>(a[1].durum=='tamam')-(b[1].durum=='tamam')||gun(b[1])-gun(a[1])).forEach(([id,x])=>(g[x.grup]??=[]).push(erow(id,x)));
-const d=dueHtml();$('#edue').innerHTML=d?'<div class="bt">Zamanı gelen evraklar</div>'+d:'';$('#bdue').innerHTML=d?'<h2 style="margin-top:24px">Zamanı gelen evraklar</h2>'+d:'';
-$('#el').innerHTML=Object.keys(g).sort((a,b)=>a.localeCompare(b,'tr')).map(k=>`<h3 class="gh">${esc(k)} <small>(${g[k].length})</small></h3>${g[k].join('')}`).join('')||'<p><small>Açık evrak yok. Evrak ekle ile başlayın.</small></p>';if(evOpen&&$('#evg').open)evFill()}
+const d=dueHtml(),E_=Object.values(EV),cn=u=>E_.filter(x=>x.durum==u).length;$('#epc').innerHTML=`<span class="pill">Açık ${E_.filter(x=>x.durum!='tamam').length}</span><span class="pill ${cn('imza')?'w':'g'}">İmza bekleyen ${cn('imza')}</span><span class="pill ${cn('tarama')?'w':'g'}">Taramada ${cn('tarama')}</span><span class="pill ${cn('ust')?'w':'g'}">Üst işverene ${cn('ust')}</span><span class="pill ${E_.some(x=>hxl(x).length)?'w':'g'}">Eksik imzalı ${E_.filter(x=>hxl(x).length).length}</span>`;$('#edue').innerHTML=d?'<div class="bt">Zamanı gelen evraklar</div>'+d:'';$('#bdue').innerHTML=d?'<h2 style="margin-top:24px">Zamanı gelen evraklar</h2>'+d:'';
+$('#el').innerHTML=Object.keys(g).sort((a,b)=>a.localeCompare(b,'tr')).map(k=>`<h3 class="gh">${esc(k)} <small>(${g[k].length})</small></h3><div class="prow erow phd"><span>Evrak</span><span>Aşama</span><span>İmza</span><span>Yerleşke</span><span>Gün</span></div>${g[k].join('')}`).join('')||'<p><small>Açık evrak yok. Evrak ekle ile başlayın.</small></p>';if(evOpen&&$('#evg').open)evFill()}
 $('#eh').onchange=renderE;
 $('#es').onchange=()=>{$('#ei').value=(SB[$('#es').value]?.imzacilar||[]).join(', ');$('#eil').checked=SB[$('#es').value]?.grup!='Kaza'};
 $('#en').onclick=()=>{ecl=[];ecr();fillS();$('#es').onchange();$('#eg').showModal()};
@@ -236,8 +238,9 @@ const ecr=()=>{$('#ecs').innerHTML=ecl.map((n,i)=>`<span class="chip">${esc(n)}<
 $('#ea').onclick=()=>{const v=$('#ec').value.trim();if(!v)return;if(!act().some(p=>p.ad==v))return alert('Listede böyle bir çalışan yok. Adı listeden seçin.');if(!ecl.includes(v))ecl.push(v);$('#ec').value='';ecr()};
 $('#ec').onkeydown=e=>{if(e.key=='Enter'){e.preventDefault();$('#ea').click()}};
 $('#ecs').onclick=e=>{const i=e.target.dataset.er;if(i!=null){ecl.splice(+i,1);ecr()}};
-function erow(id,x){const st=steps(x),k=st.findIndex(s=>s[0]==x.durum),im=x.imza,bek=im.filter(m=>m.d=='bekliyor').map(m=>m.ad),hx=hxl(x).length;
-return `<div class="row" data-ev="${id}" style="cursor:pointer"><div><b>${esc(x.baslik)}</b><br><small>${DL[DN.indexOf(x.durum)]}${x.durum=='imza'?` · ${im.length-bek.length}/${im.length} imza`+(bek.length?' · Bekleyen: '+esc(bek.slice(0,3).join(', '))+(bek.length>3?' +'+(bek.length-3):''):''):''}${hx?' · '+hx+' kişinin imzası eksik':''}</small><div class="zb">${st.map((s,i)=>`<i class="${i<k||x.durum=='tamam'?'dn':i==k?'cu':''}"></i>`).join('')}</div></div><small>${x.durum!='tamam'?gun(x)+' gün':''}</small></div>`}
+function erow(id,x){const st=steps(x),k=st.findIndex(s=>s[0]==x.durum),im=x.imza,bek=im.filter(m=>m.d=='bekliyor').map(m=>m.ad),hx=hxl(x).length,ok=im.length-bek.length,cl=x.durum=='tamam'?'g':x.durum=='planli'?'':'w',gn=x.durum!='tamam'?gun(x)+' gün':'';
+const sm=(x.durum=='imza'?`${ok}/${im.length} imza`+(bek.length?' · Bekleyen: '+esc(bek.slice(0,3).join(', '))+(bek.length>3?' +'+(bek.length-3):''):''):'')+(hx?(x.durum=='imza'?' · ':'')+hx+' kişinin imzası eksik':'');
+return `<div class="prow erow" data-ev="${id}" style="cursor:pointer"><div><b>${esc(x.baslik)}</b><br><small class="mo">${DL[DN.indexOf(x.durum)]}${sm?' · '+sm:''}</small><div class="zb">${st.map((s,i)=>`<i class="${i<k||x.durum=='tamam'?'dn':i==k?'cu':''}"></i>`).join('')}</div></div><div class="d"><span class="pill ${cl}">${DL[DN.indexOf(x.durum)]}</span></div><div class="d"><small>${sm||'-'}</small></div><div class="d"><small>${x.yer?esc(lab(x.yer)):'-'}</small></div><div class="d"><small>${gn||'-'}</small></div><small class="mo">${gn}</small></div>`}
 const evFill=()=>{const x=EV[evOpen];if(!x){$('#evg').close();return}$('#evg').innerHTML=`<div class="ph" style="margin:0 0 8px"><h2>Evrak kartı</h2><button data-cl="evg">Kapat</button></div>`+ecard(evOpen,x)};
 const evShow=e=>{const r=e.target.closest('[data-ev]');if(r){evOpen=r.dataset.ev;evFill();$('#evg').showModal()}};
 $('#el').onclick=evShow;$('#be').onclick=evShow;
