@@ -1,6 +1,6 @@
 <!doctype html><html lang="tr"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>İSG Takip v15</title><link rel="icon" href="favicon.png"><link rel="apple-touch-icon" href="favicon.png"><link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#1c2b4d">
+<title>İSG Takip v16</title><link rel="icon" href="favicon.png"><link rel="apple-touch-icon" href="favicon.png"><link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#1c2b4d">
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 :root{--bg:#eef3fa;--sf:#fff;--fg:#14213d;--mu:#5b6b85;--ln:#dbe4f1;--ac:#2f6bd8;--as:#e3edfc;--on:#fff;--wr:#b45f06;--ws:#fdf0d9;--sh:0 1px 2px #1c2b4d14,0 4px 14px #1c2b4d12;--rd:14px}
@@ -246,7 +246,7 @@ const kucult=async f=>{if(!f.type.startsWith('image/'))return f;const b=await cr
 const b64=b=>new Promise(ok=>{const r=new FileReader();r.onload=()=>ok(r.result.split(',')[1]);r.readAsDataURL(b)});
 const post=(o,pr)=>new Promise((ok,no)=>{const {u,t}=gd();if(!u||!t)return no(new Error('Önce Ayarlar bölümünde Drive bağlantısını girin.'));const x=new XMLHttpRequest();x.open('POST',u);x.setRequestHeader('Content-Type','text/plain;charset=utf-8');x.timeout=180000;
 x.upload.onprogress=e=>{if(e.lengthComputable&&pr)pr(e.loaded/e.total)};
-x.onload=()=>{try{const j=JSON.parse(x.responseText);j.ok?ok(j):no(new Error(j.hata||'Yükleme başarısız'))}catch{no(new Error('Sunucudan geçersiz yanıt alındı'))}};
+x.onload=()=>{try{const j=JSON.parse(x.responseText);j.ok?ok(j):no(new Error(j.hata||'Yükleme başarısız'))}catch{no(new Error('Geçersiz yanıt: '+String(x.responseText).replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').trim().slice(0,150)))}};
 x.onerror=()=>no(new Error('Bağlantı kurulamadı. İnternetinizi kontrol edin.'));x.ontimeout=()=>no(new Error('Zaman aşımı. Daha sonra tekrar deneyin.'));x.send(JSON.stringify({token:t,...o}))});
 const up=(m,p,c)=>{const d=$('#up');d.hidden=false;d.className=c||'';d.innerHTML=`<div>${m}</div>${p==null?'':`<div class="pb"><i style="width:${p}%"></i></div>`}${c?'<button id="upx">Tamam</button>':''}`;if(c)$('#upx').onclick=()=>d.hidden=true};
 let yk=0;
@@ -304,10 +304,15 @@ const WX=JSON.parse(localStorage.wx||'{}'),WF={},TH=()=>+localStorage.wr1||60,TW
 const wi=c=>c==0?'☀️':c<3?'🌤️':c==3?'☁️':c<50?'🌫️':c<60?'🌦️':c<80?(c<70?'🌧️':'❄️'):c<90?'🌧️':'⛈️';
 const llp=y=>{let m=String(y.ll||'').match(/(-?\d+\.\d+)\s*[,; ]\s*(-?\d+\.\d+)/);if(!m&&y.konum)m=y.konum.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/)||y.konum.match(/!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/)||y.konum.match(/[?&](?:q|ll)=(-?\d+\.\d+),(-?\d+\.\d+)/)||y.konum.match(/\/maps\/(?:search|place)\/(-?\d+\.\d+),[+\s]*(-?\d+\.\d+)/);return m?[+m[1],+m[2]]:null},LQ={};
 const ll=id=>llp(Y[id]||{})||(coz(id),MER);
-const hm=e=>{const s=String(e.message||e);return /Yetkisiz/.test(s)?'Gizli metin (TOKEN) yanlış. Ayarlar ile Code.gs aynı olmalı.':/base64|veri|Invalid argument/i.test(s)?'Apps Script eski sürümde. Yeni Code.gs dosyasını yapıştırıp Yeni sürüm olarak dağıtın.':/geçersiz yanıt|Failed to fetch|NetworkError|Bağlantı kurulamadı/i.test(s)?'Apps Script adresine ulaşılamadı veya izin verilmemiş. Dağıtımda erişim Herkes olmalı.':s};
+const hm=e=>{const s=String(e.message||e);return /Yetkisiz/.test(s)?'Gizli metin (TOKEN) yanlış. Ayarlar ile Code.gs aynı olmalı.':/base64|veri|Invalid argument/i.test(s)?'Apps Script eski sürümde. Yeni Code.gs dosyasını yapıştırıp Yeni sürüm olarak dağıtın.':/Geçersiz yanıt/.test(s)?'Apps Script bir giriş veya izin sayfası döndürdü ('+s.slice(14,110)+'). Erişim Herkes olmalı ve izin verilmiş olmalı.':/Failed to fetch|NetworkError|Bağlantı kurulamadı/i.test(s)?'Adrese ulaşılamadı. Dağıtım erişimi Herkes olmalı (Google hesabı olan herkes yetmez), adres /exec ile bitmeli.':s};
+async function geo(y){const ws=[...new Set(((y.kisa||'')+' '+(y.ad||'')).split(/\s+/).filter(w=>w.length>2))].slice(0,5);for(const w of ws){try{const r=await fetch('https://geocoding-api.open-meteo.com/v1/search?count=5&language=tr&countryCode=TR&name='+encodeURIComponent(w)),j=await r.json(),t=(j.results||[]).find(x=>x.country_code=='TR');if(t)return [Math.round(t.latitude*1e4)/1e4,Math.round(t.longitude*1e4)/1e4,t.name]}catch(e){}}return null}
 async function bul(u){const m=llp({konum:u});if(m)return m;const j=await post({coz:u});return [j.lat,j.lon]}
-async function coz(id){const y=Y[id];if(!y||!/^https?:/.test(y.konum||'')||LQ[id])return;LQ[id]=1;try{const c=await bul(y.konum);setDoc(yd(id),{ll:c[0]+', '+c[1]},{merge:true});tst('Konum bulundu: '+(y.kisa||y.ad))}catch(e){if(!/Önce Ayarlar/.test(e.message))up('✗ Konum çözülemedi ('+esc(y.kisa||y.ad)+'): '+esc(hm(e)),null,'er')}}
-$('#f-bul').onclick=async()=>{const u=$('#f-konum').value.trim(),st=$('#f-st');if(!u){st.textContent='Önce harita bağlantısını yapıştırın.';return}st.textContent='Aranıyor…';try{const c=await bul(u);$('#f-ll').value=c[0]+', '+c[1];st.textContent='Bulundu: '+c[0]+', '+c[1]+'. Kaydet deyin.'}catch(e){st.textContent='Bulunamadı: '+hm(e)}};
+async function coz(id){const y=Y[id];if(!y||!/^https?:/.test(y.konum||'')||LQ[id])return;LQ[id]=1;try{const c=await bul(y.konum);setDoc(yd(id),{ll:c[0]+', '+c[1]},{merge:true});tst('Konum bulundu: '+(y.kisa||y.ad))}catch(e){const g=await geo(y);if(g){setDoc(yd(id),{ll:g[0]+', '+g[1]},{merge:true});tst('Konum yerleşke adından bulundu: '+g[2])}else if(!/Önce Ayarlar/.test(e.message))up('✗ Konum çözülemedi ('+esc(y.kisa||y.ad)+'): '+esc(hm(e)),null,'er')}}
+$('#f-bul').onclick=async()=>{const u=$('#f-konum').value.trim(),st=$('#f-st');st.textContent='Aranıyor…';let c=null,why='';
+if(u){try{c=await bul(u)}catch(e){why=hm(e)}}
+if(c){$('#f-ll').value=c[0]+', '+c[1];st.textContent='Bulundu: '+c[0]+', '+c[1]+'. Kaydet deyin.';return}
+const g=await geo({kisa:$('#f-kisa').value,ad:$('#f-ad').value});
+if(g){$('#f-ll').value=g[0]+', '+g[1];st.textContent='Yerleşke adından bulundu: '+g[2]+' ('+g[0]+', '+g[1]+'). Yaklaşık konumdur, kontrol edin.'+(why?' Bağlantı çözülemedi: '+why:'')}else st.textContent='Bulunamadı. '+(why||'Harita bağlantısı veya ilçe adı içeren bir yerleşke adı girin.')};
 function wfetch(c){const k=c.join(',');if(Date.now()-(WF[k]||0)<6e4||(WX[k]&&Date.now()-WX[k].t<108e5))return;WF[k]=Date.now();
 fetch(`https://api.open-meteo.com/v1/forecast?latitude=${c[0]}&longitude=${c[1]}&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,wind_speed_10m_max&timezone=auto&forecast_days=16`).then(r=>r.json()).then(j=>{if(!j.daily)throw 0;WX[k]={t:Date.now(),d:j.daily};localStorage.wx=JSON.stringify(WX);WE=0;renderH()}).catch(()=>{WE=1;renderW()})}
 const wd=(c,d)=>{const x=WX[c.join(',')]?.d,i=x?x.time.indexOf(d):-1;return i>=0?{ic:wi(x.weather_code[i]),mx:Math.round(x.temperature_2m_max[i]),mn:Math.round(x.temperature_2m_min[i]),r:x.precipitation_probability_max[i],w:Math.round(x.wind_speed_10m_max[i])}:null};
